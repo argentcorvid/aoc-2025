@@ -4,7 +4,7 @@
   (ql:quickload '(:alexandria :str))
   (add-package-local-nickname 'a 'alexandria-2))
 
-(defparameter *day-number* x)
+(defparameter *day-number* 1)
 (defparameter *input-name-template* "2025d~dinput.txt")
 
 (defparameter *test-input*
@@ -24,7 +24,7 @@ L82")
             (ecase (schar line 0)
               (#\L (- (parse-integer line :start 1)))
               (#\R (parse-integer line :start 1))))
-          (str:split #\newline input-string)))
+          (str:split-omit-nulls #\newline input-string)))
 
 (defun p1 (movement-list)
   (loop with dial of-type fixnum = 50
@@ -43,7 +43,7 @@ L82")
 
 (defun main (&rest parts)
   (let* ((infile-name (format nil *input-name-template* *day-number*))
-         (input-lines (uiop:read-file-lines infile-name))
+         (input-lines (uiop:read-file-string infile-name))
          (data (parse-input input-lines)))
     (run parts data)))
 
