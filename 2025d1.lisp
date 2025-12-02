@@ -34,10 +34,14 @@ L82")
 
 (defun p2 (movement-list)
   (loop with dial of-type fixnum = 50
+        and times-through-zero of-type fixnum
+        and new-dial of-type fixnum
         for steps of-type fixnum in movement-list
-        for (zeroes new-dial) = (multiple-value-list (floor (+ steps dial) 100))
-          do (setf dial new-dial)
-        summing (abs zeroes)))
+        do (setf (values times-through-zero new-dial) (floor (+ steps dial) 100))
+        count (zerop new-dial) into total-landed-on-zero
+        sum (abs times-through-zero) into total-through-zero
+        
+          ))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
