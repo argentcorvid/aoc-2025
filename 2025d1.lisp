@@ -32,8 +32,12 @@ L82")
         do (setf dial (mod (+ dial steps) 100))
         counting (zerop dial))) 
 
-(defun p2 ()
-  )
+(defun p2 (movement-list)
+  (loop with dial of-type fixnum = 50
+        for steps of-type fixnum in movement-list
+        for (zeroes new-dial) = (multiple-value-list (floor (+ steps dial) 100))
+          do (setf dial new-dial)
+        summing (abs zeroes)))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
