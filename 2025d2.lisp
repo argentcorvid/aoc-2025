@@ -36,23 +36,25 @@
   (loop for curr-range in range-list
         summing (loop for id from (first curr-range) upto (second curr-range)
                       when (find-pattern id)
-                        collect id into invalid-ids
-                      finally (return (reduce #'+ invalid-ids)))))
+                        ; do (format t "~&~d~&" id) and
+                        sum id)))
 
 (defun find-pattern (id)
   (when (< 10 id)
     (let* ((id-string (format nil "~d" id))
            (id-length (length id-string)))
-      (when (evenp id-length)
-        (loop with maxpat = (/ id-length 2)
-              for pattern-length from 1 upto maxpat
-              for possible-pattern = (str:substring 0 pattern-length id-string)
-              thereis (if (= 1 pattern-length)
-                                        ;return isnt right here
-                          (every (lambda (char)
-                                   (eql char (schar possible-pattern 0)))
-                                 id-string)
-                          ()))))))
+      (loop with maxpat = (floor id-length 2)
+            for pattern-length downfrom maxpat above 0
+            for possible-pattern = (str:substring 0 pattern-length id-string)
+            for (pattern-times pattern-rem) = (multiple-value-list (floor id-length pattern-length))
+              thereis (when (zerop pattern-rem)
+                        (cond  ((and (= 1 pattern-length)
+                                     (every (lambda (char)
+                                              (char= (schar possible-pattern 0) char))
+                                            id-string))
+                                possible-pattern)
+                               ((= pattern-times (str:count-substring possible-pattern id-string))
+                                possible-pattern)))))))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
