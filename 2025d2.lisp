@@ -39,6 +39,21 @@
                         collect id into invalid-ids
                       finally (return (reduce #'+ invalid-ids)))))
 
+(defun find-pattern (id)
+  (when (< 10 id)
+    (let* ((id-string (format nil "~d" id))
+           (id-length (length id-string)))
+      (when (evenp id-length)
+        (loop with maxpat = (/ id-length 2)
+              for pattern-length from 1 upto maxpat
+              for possible-pattern = (str:substring 0 pattern-length id-string)
+              thereis (if (= 1 pattern-length)
+                                        ;return isnt right here
+                          (every (lambda (char)
+                                   (eql char (schar possible-pattern 0)))
+                                 id-string)
+                          ()))))))
+
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
     (ccase part
