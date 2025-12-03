@@ -32,8 +32,12 @@
       (multiple-value-bind (left right) (floor id (expt 10 (/ digits 2)))
         (= left right)))))
 
-(defun p2 ()
-  )
+(defun p2 (range-list)
+  (loop for curr-range in range-list
+        summing (loop for id from (first curr-range) upto (second curr-range)
+                      when (find-pattern id)
+                        collect id into invalid-ids
+                      finally (return (reduce #'+ invalid-ids)))))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
