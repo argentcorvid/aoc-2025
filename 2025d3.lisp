@@ -16,11 +16,13 @@
 (defun p1 (battery-list)
   (reduce #'+ (mapcar #'highest-bank-joltage battery-list))) 
 
-(defun max-and-pos (battery-bank-in &key (start 0) (end (length string-in)))
-  (loop for position from start below end
-        for battery-joltage = (schar battery-bank-in position)
-        with max-joltage = #\0
-        with max-pos = 0
+(defun max-and-pos (battery-bank-in &key (start 0) (end (length battery-bank-in)))
+  (declare (type fixnum start end)
+           (type vector battery-bank-in))
+  (loop for position fixnum from start below end
+        for battery-joltage character = (aref battery-bank-in position)
+        with max-joltage character = #\0
+        with max-pos fixnum = 0
         when (char< max-joltage battery-joltage)
           do (setf max-joltage battery-joltage
                    max-pos position)
@@ -28,13 +30,14 @@
 
 (defun highest-bank-joltage (battery-bank)
   (if (str:empty? battery-bank)
-      0)
-  (multiple-value-bind (highest-joltage highest-position)
-     (max-and-pos battery-bank :end (1- (length battery-bank)))
-    (multiple-value-bind (2nd-highest-joltage 2nd-highest-pos)
-        (max-and-pos battery-bank :start (1+ highest-position))
-      (let ((best ()))
-        (format t "bank: ~a, best joltage: ~a")))))
+      0
+      (multiple-value-bind (highest-joltage highest-position)
+          (max-and-pos battery-bank :end (1- (length battery-bank)))
+        (multiple-value-bind (2nd-highest-joltage 2nd-highest-pos)
+            (max-and-pos battery-bank :start (1+ highest-position))
+          (let ((best (concatenate 'string (list highest-joltage 2nd-highest-joltage))))
+            (format t "~&bank: ~a, best joltage: ~a~&" battery-bank best)
+            (parse-integer best))))))
 
 (defun p2 ()
   )
@@ -51,4 +54,4 @@
     (run parts input-lines)))
 
 (defun test (&rest parts)
-  (run parts *test-inpu*))
+  (run parts *test-input*))
