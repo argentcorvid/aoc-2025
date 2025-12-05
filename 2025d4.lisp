@@ -43,17 +43,25 @@
   (loop with pos = (list col row)
         for look-delta in *look8*
         for (look-col look-row) = (mapcar #'+ pos look-delta)
-        never (>= neighbors 4)
         count (and (array-in-bounds-p grid look-col look-row)
-                  (equal #\@ (aref grid look-col look-row)))
+                   (equal #\@ (aref grid look-col look-row)))
           into neighbors
+        always (< neighbors 4)
                                         ;even need the comapre here?
-        finally (return (when (< neighbors 4)
-                          (format t "~&reachable: ~a,~a" col row)
-                          t)))) 
+        finally (format t "~&reachable: ~a,~a" col row)
+                (return t))) 
 
-(defun p2 ()
-  )
+(defun p2 (paper-grid)
+  "brute force version, repeatedly call p1, set movables to not-paper, loop until no more movables"
+  (let ((my-grid (adjust-array paper-grid (array-dimensions paper-grid) ;maybe adjust-array
+                               )))
+    (loop for movables = (p1 my-grid)
+          with number-moved fixnum = 0
+          while (< 0 (length movables))
+          do (dolist (pos movables)
+               (setf (apply #'aref my-grid pos) #\M))
+             (incf number-moved (length movables))
+          finally (return number-moved))))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
