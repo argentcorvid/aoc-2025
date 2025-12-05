@@ -34,9 +34,10 @@
 (defun p1 (paper-grid)
   (loop with (cols rows) = (array-dimensions paper-grid)
         for row from 0 below rows
-        summing (loop for col from 0 below cols
-                      when (equal #\@ (aref paper-grid col row))
-                        counting (reachable paper-grid col row))))
+        nconcing (loop for col from 0 below cols
+                      when (and (equal #\@ (aref paper-grid col row))
+                                (reachable paper-grid col row))
+                        collect (list col row))))
 
 (defun reachable (grid col row)
   (loop with pos = (list col row)
@@ -57,7 +58,7 @@
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
     (ccase part
-      (1 (format t "~&Part 1: ~a" (p1 data)))
+      (1 (format t "~&Part 1: ~a" (length (p1 data))))
       (2 (format t "~&Part 2: ~a" (p2 data))))))
 
 (defun main (&rest parts)
