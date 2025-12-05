@@ -39,6 +39,13 @@
             (format t "~&bank: ~a, best joltage: ~a~&" battery-bank best)
             (parse-integer best))))))
 
+(defun highest-override-joltage (battery-bank &key (number-to-keep 12))
+  "throw out the (length - 12) lowest joltages"
+  (let* ((bank-size (length battery-bank))
+         (number-to-discard (- bank-size number-to-keep)))
+    )
+  )
+
 (defun p2 ()
   )
 
