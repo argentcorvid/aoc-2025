@@ -35,20 +35,19 @@
   (loop with (cols rows) = (array-dimensions paper-grid)
         for row from 0 below rows
         summing (loop for col from 0 below cols
-                      counting (reachable paper-grid col row))))
+                      when (equal #\@ (aref paper-grid col row))
+                        counting (reachable paper-grid col row))))
 
 (defun reachable (grid col row)
   (loop with pos = (list col row)
-        and count = 0
         for look-delta in *look8*
         for (look-col look-row) = (mapcar #'+ pos look-delta)
-        when (>= count 4)
-          return nil
-        when (and (array-in-bounds-p grid look-col look-row)
+        never (>= neighbors 4)
+        count (and (array-in-bounds-p grid look-col look-row)
                   (equal #\@ (aref grid look-col look-row)))
-          do (incf count)
+          into neighbors
                                         ;even need the comapre here?
-        finally (return (when (< count 4)
+        finally (return (when (< neighbors 4)
                           (format t "~&reachable: ~a,~a" col row)
                           t)))) 
 
