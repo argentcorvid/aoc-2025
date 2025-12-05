@@ -47,9 +47,10 @@
         when (and (array-in-bounds-p grid look-col look-row)
                   (equal #\@ (aref grid look-col look-row)))
           do (incf count)
-             (format t "~&reachable: ~a,~a" col row)
                                         ;even need the comapre here?
-        finally (return (< count 4)))) 
+        finally (return (when (< count 4)
+                          (format t "~&reachable: ~a,~a" col row)
+                          t)))) 
 
 (defun p2 ()
   )
