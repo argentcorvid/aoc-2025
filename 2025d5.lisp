@@ -5,6 +5,9 @@
   (add-package-local-nickname 'a 'alexandria-2))
 
 (defparameter *day-number* 5)
+
+(defparameter *test* nil)
+
 (defparameter *input-name-template* "2025d~dinput.txt")
 
 (defparameter *test-input*
@@ -19,6 +22,11 @@
 11
 17
 32")
+
+(defun test-print (format-string &rest args)
+  "print to standard out if *test* is t"
+  (when *test*
+    (apply #'format t format-string args)))
 
 (define-modify-macro sortf (pred &rest args) sort)
 
@@ -39,33 +47,37 @@
     (dolist (available-ingredient
              (gethash :available in-table)
              fresh-count)
-      (when (find-if (lambda (range)
-                       (<= (first range)
-                           available-ingredient
-                           (second range)))
-                     (gethash :ranges in-table))
-        ;(print available-ingredient)
-        (incf fresh-count))))) 
+      (let ((found-range (find-if (lambda (range)
+                         (<= (first range)
+                             available-ingredient
+                             (second range)))
+                       (gethash :ranges in-table))))
+        (when found-range
+          (test-print "~&fresh ingredient ~a found in range ~a" available-ingredient found-range)
+          (incf fresh-count)))))) 
 
 (defun p2 (in-table)
   (let* ((ranges (gethash :ranges in-table))
          (prev-start (first (first ranges)))
          (prev-end (second (first ranges)))
          (count (1+ (- prev-end prev-start))))
-    (pop ranges)
+    (test-print "~&first range:~a~% count: ~a "(pop ranges) count)
     (dolist (curr-range ranges count)
       (destructuring-bind (curr-start curr-end)
           curr-range
-        (cond ((< prev-end curr-start) ;no overlap, new range
+        (test-print "~&prev range: (~a ~a)~%current range: ~a" prev-start prev-end curr-range)
+        (cond ((< prev-end curr-start)  ;no overlap, new range
                (setf prev-start curr-start
                      prev-end   curr-end)
-               (incf count (1+ (- curr-end curr-start))))
-              ((<= prev-start curr-start curr-end prev-end)
-               nil) ;range already taken care of
-              ((and (<= prev-start curr-start )
-                    (<= prev-end curr-end))
-               (setf prev-end curr-end)
-               (incf count (1+ (- curr-end prev-end)))))))))
+               
+               (test-print "~& no overlap. new range ~a~%  new count: ~a" curr-range (incf count (1+ (- curr-end curr-start)))))
+              ((and (<= prev-start curr-start)
+                    (<= curr-start prev-end))
+               (test-print "~&ranges (~a ~a) and ~a overlap" prev-start prev-end curr-range)
+               (if (< prev-end curr-end)
+                   (progn (test-print " partially~& changing prev-end to ~a~% new count: ~a" curr-end (incf count (- curr-end prev-end)))
+                          (setf prev-end curr-end))
+                   (test-print " fully~& doing nothing"))))))))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
@@ -80,4 +92,5 @@
     (run parts data)))
 
 (defun test (&rest parts)
-  (run parts (parse-input *test-input*)))
+  (let ((*test* t))
+    (run parts (parse-input *test-input*))))
