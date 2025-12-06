@@ -47,8 +47,25 @@
         ;(print available-ingredient)
         (incf fresh-count))))) 
 
-(defun p2 ()
-  )
+(defun p2 (in-table)
+  (let* ((ranges (gethash :ranges in-table))
+         (prev-start (first (first ranges)))
+         (prev-end (second (first ranges)))
+         (count (1+ (- prev-end prev-start))))
+    (pop ranges)
+    (dolist (curr-range ranges count)
+      (destructuring-bind (curr-start curr-end)
+          curr-range
+        (cond ((< prev-end curr-start) ;no overlap, new range
+               (setf prev-start curr-start
+                     prev-end   curr-end)
+               (incf count (1+ (- curr-end curr-start))))
+              ((<= prev-start curr-start curr-end prev-end)
+               nil) ;range already taken care of
+              ((and (<= prev-start curr-start )
+                    (<= prev-end curr-end))
+               (setf prev-end curr-end)
+               (incf count (1+ (- curr-end prev-end)))))))))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
