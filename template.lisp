@@ -10,6 +10,12 @@
 (defparameter *test-input*
   '())
 
+(defparameter *verbose* nil)
+
+(defun vformat (format-string &rest args)
+  "print to standard output only if *verbose* is true"
+  (apply #'format t format-string args))
+
 (defun parse-input (lines)
   )
 
@@ -32,4 +38,5 @@
     (run parts data)))
 
 (defun test (&rest parts)
-  (run parts (parse-input *test-input*)))
+  (let ((*verbose* t))
+    (run parts (parse-input *test-input*))))
