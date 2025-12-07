@@ -35,7 +35,7 @@
     (destructuring-bind (ranges-string available-string)
         (str:paragraphs string)
       (dolist (rng (str:split-omit-nulls #\newline ranges-string)
-                   (sortf (gethash :ranges out) #'< :key #'first))
+                   (sortf (the list (gethash :ranges out)) #'< :key #'first))
         (push (mapcar #'parse-integer (str:split #\- rng)) (gethash :ranges out (list))))
       (setf (gethash :available out)
             (mapcar #'parse-integer (str:split-omit-nulls #\newline available-string)))
@@ -48,23 +48,25 @@
              (gethash :available in-table)
              fresh-count)
       (let ((found-range (find-if (lambda (range)
-                         (<= (first range)
-                             available-ingredient
-                             (second range)))
-                       (gethash :ranges in-table))))
+                                    (<= (the fixnum(first range))
+                                        (the fixnum available-ingredient)
+                                        (the fixnum(second range))))
+                                  (the list (gethash :ranges in-table)))))
         (when found-range
           (test-print "~&fresh ingredient ~a found in range ~a" available-ingredient found-range)
           (incf fresh-count)))))) 
 
 (defun p2 (in-table)
   (let* ((ranges (gethash :ranges in-table))
-         (prev-start (first (first ranges)))
-         (prev-end (second (first ranges)))
+         (prev-start (the fixnum (first (first ranges))))
+         (prev-end (the fixnum (second (first ranges))))
          (count (1+ (- prev-end prev-start))))
+    (declare (type fixnum prev-start prev-end count))
     (test-print "~&first range:~a~% count: ~a "(pop ranges) count)
     (dolist (curr-range ranges count)
       (destructuring-bind (curr-start curr-end)
           curr-range
+        (declare (type fixnum curr-start curr-end))
         (test-print "~&prev range: (~a ~a)~%current range: ~a" prev-start prev-end curr-range)
         (cond ((< prev-end curr-start)  ;no overlap, new range
                (setf prev-start curr-start
