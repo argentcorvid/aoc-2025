@@ -35,13 +35,19 @@
           (apply #'mapcar #'list)))
       (2  ;;all lines 3747 long, max width each group 4
        ;; all operator chars on lsd column
-       (let ((numbers-to-operate (list)))
-         (ppcre:do-matches (left-posn sep-posn "[+*]\\s+" (a:lastcar lines) (list numbers-to-operate))
+       (let ((numbers-to-operate (list))
+             (operators (a:lastcar lines))
+             (numbers-only (subseq lines 0 (1- (length lines)))))
+         (ppcre:do-matches (left-posn sep-posn "[+*]\\s+" operators (list numbers-to-operate
+                                                                          (str:words operators)))
            ;; each "problem grouping"
            (push (loop :with right-posn = (1- sep-posn)
                        :for pos :from right-posn :downto left-posn
-                       :collect (loop :for l :in lines
-                                      :collect (aref l pos)))
+                       :when (parse-integer (coerce (loop :for l :in numbers-only
+                                                  :collect (aref l pos))
+                                            'string)
+                                               :junk-allowed t)
+                       :collect it)
                  numbers-to-operate)))))))
 
 (defun p1 (operations)
