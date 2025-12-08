@@ -38,15 +38,22 @@
        (let ((numbers-to-operate (list))
              (operators (a:lastcar lines))
              (numbers-only (subseq lines 0 (1- (length lines)))))
-         (ppcre:do-matches (left-posn sep-posn "[+*]\\s+" operators (list numbers-to-operate
-                                                                          (str:words operators)))
+         (ppcre:do-matches (left-posn
+                            sep-posn
+                            "[+*]\\s+"
+                            operators
+                            (mapcar #'cons
+                                    (nreverse (mapcar #'find-symbol (str:words operators)))
+                                    numbers-to-operate))
            ;; each "problem grouping"
            (push (loop :with right-posn = (1- sep-posn)
                        :for pos :from right-posn :downto left-posn
+                       ;; each Column
                        :when (parse-integer (coerce (loop :for l :in numbers-only
-                                                  :collect (aref l pos))
-                                            'string)
-                                               :junk-allowed t)
+                                                          ;; each digit
+                                                          :collect (aref l pos))
+                                                    'string)
+                                            :junk-allowed t)
                        :collect it)
                  numbers-to-operate)))))))
 
@@ -56,8 +63,12 @@
    (mapcar #'eval)
    (reduce #'+))) 
 
-(defun p2 ()
-  )
+(defun p2 (problems)
+  (reduce #'+ (mapcar (lambda (problem)
+                        (ecase (car problem)
+                          (+ (reduce #'+ (rest problem)))
+                          (* (reduce #'* (rest problem) :initial-value 1))))
+                      problems)))
 
 (defun run (parts-list input-lines)
   (dolist (part (a:ensure-list parts-list))
