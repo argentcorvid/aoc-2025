@@ -56,14 +56,9 @@
                                             :junk-allowed t)
                        :collect it)
                  numbers-to-operate)))))))
+ 
 
-(defun p1 (operations)
-  (a:line-up-last
-   operations
-   (mapcar #'eval)
-   (reduce #'+))) 
-
-(defun p2 (problems)
+(defun p1-and-p2 (problems)
   (reduce #'+ (mapcar (lambda (problem)
                         (ecase (car problem)
                           (+ (reduce #'+ (rest problem)))
@@ -74,8 +69,8 @@
   (dolist (part (a:ensure-list parts-list))
     (let ((data (parse-input input-lines :part part)))
       (ccase part
-        (1 (format t "~&Part 1: ~a" (p1 data)))
-        (2 (format t "~&Part 2: ~a" (p2 data)))))))
+        (1 (format t "~&Part 1: ~a" (p1-and-p2 data)))
+        (2 (format t "~&Part 2: ~a" (p1-and-p2 data)))))))
 
 (defun main (&rest parts)
   (let* ((infile-name (format nil *input-name-template* *day-number*))
