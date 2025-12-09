@@ -19,14 +19,17 @@
 
 (defun vformat (format-string &rest args)
   "print to standard output only if *verbose* is true"
-  (apply #'format t format-string args))
+  (when *verbose*
+    (apply #'format t format-string args)))
 
 (defun parse-input (lines &key (part 1))
-  (flet ((parse-int-but-op (line-in)
-           (let ((split-line (str:split-omit-nulls #\space line-in)))
-             (if  (find (elt split-line 0) '("+" "*") :test #'equal )
-                  (mapcar #'a:ensure-symbol split-line)
-                  (mapcar #'parse-integer split-line)))))
+  (labels ((parse-int-but-op (line-in)
+             (let ((split-line (str:words line-in)))
+               (mapcar #'parse split-line)))
+           (parse (group)
+             (handler-case (parse-integer group)
+               (parse-error () (find-symbol group))
+               (error (e) (format t "some other error ~a" e)))))
     (case part
       (1 (a:line-up-last
           lines
@@ -54,7 +57,7 @@
                                                           :collect (aref l pos))
                                                     'string)
                                             :junk-allowed t)
-                       :collect it)
+                         :collect it)
                  numbers-to-operate)))))))
  
 
