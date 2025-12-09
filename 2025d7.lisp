@@ -38,8 +38,9 @@
   ;; (make-array (list (length lines) (length (first lines)))
   ;;              :initial-contents lines)
   ;; ?
-  lines
-  )
+  (let ((new (list)))
+    (dolist (itm lines new)
+      (setf new (append new (list itm))))))
 
 (declaim (inline parse-input))
 
@@ -48,33 +49,32 @@
 
 (defun p1 (tachyon-manifold)
   (let ((my-manifold (a:copy-sequence 'list tachyon-manifold))
-        (split-count 0))
-    (setf (aref (first my-manifold) (position #\S (first my-manifold))) #\|)
+        (split-count 0)
+        (worlds (make-array (length (first tachyon-manifold)) :initial-element 0)))
+    (setf (aref worlds (position #\S (first my-manifold))) 1)
     (do* ((curr-row-num 1 (incf curr-row-num))
           (prev-row (first my-manifold) curr-row)
           (curr-row (nth curr-row-num my-manifold) (nth curr-row-num my-manifold)))
          ((< (length my-manifold) curr-row-num) split-count)
       (dotimes (i (length curr-row))
-        (when (char= #\| (aref prev-row i))
-          (case (aref curr-row i)
-            (#\. (setf (aref curr-row i) #\|))
-            (#\^ (setf (aref curr-row (1- i)) #\|
-                     (aref curr-row (1+ i)) #\|)
-             (incf split-count)))))
-      endloop)
+        (unless (zerop (aref worlds i))
+          (when (char= (aref curr-row i) #\^)
+            (incf (aref worlds (1- i))) 
+            (incf (aref worlds (1+ i)))
+            (setf (aref worlds i) 0)
+            (incf split-count)))))
     (dolist (line my-manifold)
       (fresh-line)
       (print line))
-    split-count)) 
-
-(defun p2 ()
-  )
+    (values split-count (reduce #'+ worlds)))) 
 
 (defun run (parts-list data)
-  (dolist (part (a:ensure-list parts-list))
-    (ccase part
-      (1 (format t "~&Part 1: ~a" (p1 data)))
-      (2 (format t "~&Part 2: ~a" (p2 data))))))
+  (multiple-value-bind (p1-res p2-res)
+      (p1 data)
+    (dolist (part (a:ensure-list parts-list))
+      (ccase part
+        (1 (format t "~&Part 1: ~a" p1-res))
+        (2 (format t "~&Part 2: ~a" p2-res))))))
 
 (defun main (&rest parts)
   (let* ((infile-name (format nil *input-name-template* *day-number*))
