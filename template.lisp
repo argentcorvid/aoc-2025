@@ -14,7 +14,8 @@
 
 (defun vformat (format-string &rest args)
   "print to standard output only if *verbose* is true"
-  (apply #'format t format-string args))
+  (when *verbose*
+    (apply #'format t format-string args)))
 
 (defun parse-input (lines)
   )
