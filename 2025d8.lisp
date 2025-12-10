@@ -50,7 +50,14 @@
           lines))
 
 (defun p1 (j-boxes-in connections-required number-of-circuits)
-  ) 
+  (let ((distances (list)))
+    (a:map-combinations (lambda (point-pair)
+                          (destructuring-bind (p1 p2)
+                              point-pair
+                            (push (list (point-distance p1 p2) distances))))
+                        j-boxes-in
+                        :length 2))
+  (setf distances (sort distances #'< :key #'first ))) 
 
 (defun p2 ()
   )
