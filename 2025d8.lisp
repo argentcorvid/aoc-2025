@@ -1,6 +1,6 @@
 ;;;2025 day 8
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :cload-toplevel)
   (ql:quickload '(:alexandria :str))
   (add-package-local-nickname 'a 'alexandria-2))
 
@@ -44,20 +44,32 @@
                and c2 fixnum in p2
                sum (expt (- c2 c1) 2))))
 
+(defun pair-distance (point-pair)
+  (apply #'point-distance point-pair))
+
+(define-modify-macro sortf (pred &rest args) sort)
+
 (defun parse-input (lines)
   (mapcar (lambda (line)
             (mapcar #'parse-integer (str:split #\, line)))
           lines))
 
-(defun p1 (j-boxes-in connections-required number-of-circuits)
-  (let ((distances (list)))
+(defun p1 (j-boxes-in num-to-connect &optional ( number-of-circuits 3))
+  (let ((pairs (list))
+        (circuits (mapcar #'list j-boxes-in)))
     (a:map-combinations (lambda (point-pair)
-                          (destructuring-bind (p1 p2)
-                              point-pair
-                            (push (list (point-distance p1 p2) distances))))
+                          (push point-pair pairs))
                         j-boxes-in
                         :length 2))
-  (setf distances (sort distances #'< :key #'first ))) 
+  (sortf pairs #'< :key #'pair-distance)
+  (setf pairs (subseq pairs 0 (1- num-to-connect)))
+  (mapc (lambda (pair)
+          (let ((it (find pair circuits :test (lambda (a b)
+                                                (intersection a b :test #'equal)))))
+            (when it
+              (a:unionf it pair :test #'equal))) )
+        pairs)
+  (reduce #'* circuits :key #'length :end 2)) ;need to sort by size
 
 (defun p2 ()
   )
