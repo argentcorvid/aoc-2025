@@ -56,21 +56,28 @@
 
 (defun p1 (j-boxes-in num-to-connect &optional ( number-of-circuits 3))
   (let ((pairs (list))
-        (circuits (make-list num-to-connect (list))))
+        (circuits (list)))
     (a:map-combinations (lambda (point-pair)
                           (push point-pair pairs))
                         j-boxes-in
                         :length 2)
-    (map-into circuits ;map not the right choice?
-              (lambda (pair)
-                (a:if-let ((it (find pair circuits ; if found in circuits, union circuit and pair, replace? else, push pair to circuits?
-                                     :test (lambda (a b) 
-                                             (intersection a b :test #'equal)))))
-                  (union it pair :test #'equal) ;need to replace/set into circuits
-                  circuits))
-              (subseq (sort pairs #'< :key #'pair-distance) 0 num-to-connect))
-    (reduce #'* (subseq (sort circuits #'< :key #'length) 0 3)
-            :key #'length :end number-of-circuits :initial-value 1))) 
+    (sortf pairs #'< :key #'pair-distance)
+    (vformat "~&10 closest pairs:~& ~a" (subseq pairs 0 10))
+    (push (pop pairs) circuits) ;the first pair is definetly a circuit
+    (mapc (lambda (pair)
+            (a:if-let ((it (find pair circuits ; if found in circuits, union circuit and pair, replace? else, push pair to circuits?
+                                 :test (lambda (a b) 
+                                         (intersection a b :test #'equal)))))
+              (progn (vformat "~&found ~a in circuits~% for pair ~a" it pair)
+                     (setf circuits (substitute (union it pair :test #'equal) it circuits :test (lambda (a b) (intersection a b :test #'equal)))))  
+              (progn (vformat "~&no match for pair ~a" pair)
+                     (push pair circuits))))
+          (subseq pairs 0 num-to-connect))
+    ;; (break)
+    ;; (reduce #'* (sort circuits #'> :key #'length)
+    ;;         :key #'length :end number-of-circuits :initial-value 1)
+    (sort circuits #'> :key #'length)
+    )) 
 
 (defun p2 ()
   )
