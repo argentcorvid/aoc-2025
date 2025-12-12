@@ -54,25 +54,45 @@
             (mapcar #'parse-integer (str:split #\, line)))
           lines))
 
+(defun equal-intersection (list1 list2 &rest args)
+  "intersection using #'equal"
+  (apply #'intersection list1 list2 :test #'equal args))
+
+(defun equal-union (list1 list2 &rest args)
+  (apply #'union list1 list2 :test #'equal args))
+
+(defun connect-pair (j-box-pair)
+  "move pair of junction boxes to the appropriate circuit"
+  (declare (special circuits))
+  (destructuring-bind (box1 box2) j-box-pair)
+  
+
+  (setf circuits ()))
+
 (defun p1 (j-boxes-in num-to-connect &optional ( number-of-circuits 3))
   (let ((pairs (list))
         (circuits (list)))
+    (declare (special circuits))
     (a:map-combinations (lambda (point-pair)
                           (push point-pair pairs))
                         j-boxes-in
                         :length 2)
     (sortf pairs #'< :key #'pair-distance)
     (vformat "~&10 closest pairs:~& ~a" (subseq pairs 0 10))
-    (push (pop pairs) circuits) ;the first pair is definetly a circuit
+    (push (first pairs) circuits) ;first pair is definitely a circuit
     (mapc (lambda (pair)
             (a:if-let ((it (find pair circuits ; if found in circuits, union circuit and pair, replace? else, push pair to circuits?
-                                 :test (lambda (a b) 
-                                         (intersection a b :test #'equal)))))
+                                 :test #'equal-intersection)))
               (progn (vformat "~&found ~a in circuits~% for pair ~a" it pair)
-                     (setf circuits (substitute (union it pair :test #'equal) it circuits :test (lambda (a b) (intersection a b :test #'equal)))))  
+                     (setf circuits (remove-duplicates (substitute (equal-union it pair)
+                                                                   it
+                                                                   circuits
+                                                                   :test #'equal-intersection)
+                                                       :test #'a:set-equal)))  
               (progn (vformat "~&no match for pair ~a" pair)
-                     (push pair circuits))))
-          (subseq pairs 0 num-to-connect))
+                     (push pair circuits)))
+            (vformat "~&  circuits now: ~a" circuits))
+          (subseq pairs 1 num-to-connect))
     ;; (break)
     ;; (reduce #'* (sort circuits #'> :key #'length)
     ;;         :key #'length :end number-of-circuits :initial-value 1)
