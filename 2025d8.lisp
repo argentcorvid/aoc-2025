@@ -40,14 +40,16 @@
     (apply #'format t format-string args)))
 
 (declaim (inline equal-intersection
-                                  equal-union
-                                  pair-distance
-                                  point-distance))
+                 equal-union
+                 pair-distance
+                 point-distance
+                 join-circuits))
 
 (defun point-distance (p1 p2)
-  (isqrt (loop for c1 fixnum in p1
-               and c2 fixnum in p2
-               sum (expt (- c2 c1) 2))))
+  (isqrt (reduce #'+
+                 (mapcar (lambda (c1 c2)
+                           (declare (fixnum c1 c2)) (expt (- c1 c2) 2))
+                         p1 p2))))
 
 (defun pair-distance (point-pair)
   (apply #'point-distance point-pair))
@@ -72,14 +74,18 @@
   (let ((new-circuit (equal-union c1 c2)))
     (cons new-circuit (remove new-circuit circuits-in :test #'equal-intersection))))
 
-(defun p1 (j-boxes-in num-to-connect &optional ( number-of-circuits 3))
-  (let ((pairs (list))
-        (circuits (mapcar #'list j-boxes-in)))
+(defun make-pair-list (coord-list)
+  (let ((pair-list (list)))
     (a:map-combinations (lambda (point-pair)
-                          (push point-pair pairs))
-                        j-boxes-in
+                          (push point-pair pair-list))
+                        coord-list
                         :length 2)
-    (sortf pairs #'< :key #'pair-distance)
+    (sortf pair-list #'< :key #'pair-distance)))
+
+(defun p1 (j-boxes-in num-to-connect &optional ( number-of-circuits 3))
+  (let ((pairs (make-pair-list j-boxes-in))
+        (circuits (mapcar #'list j-boxes-in)))
+    (declare (list pairs circuits))
     (vformat "~&10 closest pairs:~& ~a" (subseq pairs 0 10))
     (mapc (lambda (pair)
             (destructuring-bind (c1 c2)
@@ -97,8 +103,27 @@
     (reduce #'* (sort (mapcar #'length circuits) #'>)
             :end number-of-circuits :initial-value 1))) 
 
-(defun p2 ()
-  )
+(defun p2 (j-boxes-in)
+  (let* ((circuits (mapcar #'list j-boxes-in))
+         (pairs (make-pair-list j-boxes-in))
+         (last-pair (loop for pair in pairs
+                          for (c1 c2) = (loop for point in pair
+                                              collect (find (list point) circuits :test #'equal-intersection))
+                          with connections-made = 0
+                          until (= 2 (length circuits))
+                          when (or c1 c2)
+                            do (setf circuits (join-circuits  c1 c2 circuits))
+                               (incf connections-made)
+                               
+                          finally (progn (vformat "~&connections made: ~a" connections-made)
+                                         (vformat "~&last pair done: ~a" pair)
+                                         (return pair)))))
+    
+    (if (> (length circuits) 2)
+        (error "ran out of single points to connect")
+        (let ((next-pair (nth (1+ (position last-pair pairs :test #'equal)) pairs)))
+          (vformat "~&next pair to do: ~a" next-pair)
+          (apply #'* (mapcar #'first next-pair))))))
 
 (defun run (parts-list data)
   )
