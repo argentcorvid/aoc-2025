@@ -48,7 +48,8 @@
 (defun point-distance (p1 p2)
   (isqrt (reduce #'+
                  (mapcar (lambda (c1 c2)
-                           (declare (fixnum c1 c2)) (expt (- c1 c2) 2))
+                           (declare (fixnum c1 c2))
+                           (expt (- c1 c2) 2))
                          p1 p2))))
 
 (defun pair-distance (point-pair)
@@ -110,7 +111,7 @@
                           for (c1 c2) = (loop for point in pair
                                               collect (find (list point) circuits :test #'equal-intersection))
                           with connections-made = 0
-                          until (= 2 (length circuits))
+                          until (= 1 (length circuits))
                           when (or c1 c2)
                             do (setf circuits (join-circuits  c1 c2 circuits))
                                (incf connections-made)
@@ -119,9 +120,9 @@
                                          (vformat "~&last pair done: ~a" pair)
                                          (return pair)))))
     
-    (if (> (length circuits) 2)
+    (if (> (length circuits) 1)
         (error "ran out of single points to connect")
-        (let ((next-pair (nth (1+ (position last-pair pairs :test #'equal)) pairs)))
+        (let ((next-pair (nth (1- (position last-pair pairs :test #'equal)) pairs)))
           (vformat "~&next pair to do: ~a" next-pair)
           (apply #'* (mapcar #'first next-pair))))))
 
