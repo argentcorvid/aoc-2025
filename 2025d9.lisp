@@ -16,7 +16,8 @@
 2,5
 2,3
 7,3")
-  "col,row; largest rectangular area for p1: 50")
+  "col,row; largest rectangular area for p1: 50
+p2:24")
 
 (defparameter *verbose* nil)
 
@@ -46,9 +47,42 @@
                           (a:maxf max-rectangle (rectangle-area tile-pair)))
                         red-tiles
                         :length 2)
-    max-rectangle)) 
+    max-rectangle))
 
-(defun p2 ()
+(defun get-shape-edges (vertices)
+  (flet ((make-line (c1 r1 c2 r2)
+           (let* ((min-row (min r2 r1))
+                  (min-col (min c2 c1))
+                  (max-row (max r2 r1))
+                  (max-col (max c2 c1))
+                  (row-span (- max-row min-row))
+                  (col-span (- max-col min-col)))
+             (if (zerop row-span)
+                 (mapcar #'list (a:iota col-span :start min-col)
+                         (make-list col-span :initial-element max-row))
+                 (mapcar #'list (make-list row-span :initial-element max-col)
+                         (a:iota row-span :start min-row))
+                 ))))
+    (loop :for ((col1 row1)
+                (col2 row2))
+            :on vertices
+          :by #'cdr
+          :when (null col2)
+            :do (setf col2 (first (first vertices))
+                      row2 (second (first vertices)))
+          :nconc (make-line col1 row1 col2 row2))))
+
+(defun print-grid (in-list)
+  (let ((min-row 0)
+        (min-col 0)
+        (max-row ())
+        (max-col)
+        )))
+
+(defun p2 (red-tiles)
+  (let* ((last-red (a:lastcar red-tiles))
+         (shape-edges (get-shape-edges red-tiles)))
+    )
   )
 
 (defun run (parts-list data)
