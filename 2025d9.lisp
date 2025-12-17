@@ -73,11 +73,18 @@ p2:24")
           :nconc (make-line col1 row1 col2 row2))))
 
 (defun print-grid (in-list)
-  (let ((min-row 0)
-        (min-col 0)
-        (max-row ())
-        (max-col)
-        )))
+  (let* ((min-row 0)
+         (min-col 0)
+         (max-row (1+ (reduce #'max in-list :key #'second)))
+         (max-col (1+ (reduce #'max in-list :key #'first)))
+         (lines (loop :repeat max-row
+                      :collect (make-string max-col :initial-element #\.))))
+    (dolist (pt in-list)
+      (destructuring-bind (c r) pt
+        (setf (char (nth r lines) c) #\O)))
+    (dolist (l lines)
+      (fresh-line)
+      (princ l))))
 
 (defun p2 (red-tiles)
   (let* ((last-red (a:lastcar red-tiles))
