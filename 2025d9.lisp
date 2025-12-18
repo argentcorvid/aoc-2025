@@ -117,14 +117,21 @@ p2:24")
 
 (defun point-inside-shape-p (pt shape-bounds)
   (or (member pt shape-bounds :test #'equal)
-      (oddp (length (intersection shape-bounds
+      (oddp (length (intersection shape-bounds ;problem is here if inline with, but not on the shape's boundary
                                   (apply #'make-line 0 (second pt) pt)
                                   :test #'equal)))))
 
 (defun p2 (red-tiles)
-  (let* ((green-shape-edges (get-shape-edges red-tiles)))
-    )
-  )
+  (let* ((green-shape-edges (get-shape-edges red-tiles))
+         (max-rectangle 0))
+    (declare (fixnum max-rectangle))
+    (a:map-combinations (lambda (tile-pair)
+                          (when (every (a:rcurry #'point-inside-shape-p green-shape-edges)
+                                       (get-rectangle-edges tile-pair))
+                            (a:maxf max-rectangle (rectangle-area tile-pair))))
+                        red-tiles
+                        :length 2)
+    max-rectangle))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
