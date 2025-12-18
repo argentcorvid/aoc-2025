@@ -57,11 +57,11 @@ p2:24")
          (row-span (- max-row min-row))
          (col-span (- max-col min-col)))
     (cond ((zerop row-span) ;horizontal
-           (mapcar #'list (a:iota col-span :start min-col)
-                   (make-list col-span :initial-element max-row)))
+           (mapcar #'list (a:iota (1+ col-span) :start min-col)
+                   (make-list (1+ col-span) :initial-element max-row)))
           ((zerop col-span) ;vertical
-           (mapcar #'list (make-list row-span :initial-element max-col)
-                   (a:iota row-span :start min-row)))
+           (mapcar #'list (make-list (1+ row-span) :initial-element max-col)
+                   (a:iota (1+ row-span) :start min-row)))
           ;; ((= row-span col-span) ;slope 1 diagonal
           ;;  (let (())
           ;;    (mapcar #'list (a:iota col-span :start min-col)
@@ -78,31 +78,28 @@ p2:24")
           )))
 
 (defun get-shape-edges (vertices)
-  (loop :with last = (a:lastcar vertices)
-        :for ((col1 row1)
+  (loop :for ((col1 row1)
               (col2 row2))
-          :on (cons (list (first last)
-                          (second last))
-                    vertices)
-        :by #'cdr
-        :when (null col2)
-          :do (setf col2 (first (first vertices))
-                    row2 (second (first vertices)))
-        :nconc (make-line col1 row1 col2 row2)))
+          :on `(,(copy-list (a:lastcar vertices)) ,@vertices) ; deep copy last, prepend to vertices to make closed loop
+        :unless (null col2)
+          :nconc (make-line col1 row1 col2 row2)
+            :into edges
+        :finally (return (delete-duplicates edges :test #'equal))))
 
 (defun get-rectangle-edges (corner-pair)
   (destructuring-bind (pt1 pt3) corner-pair
-    (let ((pt2 (list (first pt1) (second pt3)))
-          (pt4 (list (first pt3) (second pt1))))
+    (let ((pt4 (list (first pt1) (second pt3)))
+          (pt2 (list (first pt3) (second pt1))))
       (get-shape-edges (list pt1 pt2 pt3 pt4)))))
 
 (defun rectangle-equal (corner-pair1 corner-pair2)
-  (or (equal corner-pair1 corner-pair2)
+  (or (a:set-equal corner-pair1 corner-pair2 :test #'equal)
       (destructuring-bind (p2-pt1 p2-pt3)
           corner-pair2
-        (equal corner-pair1
-               (list (list (first p2-pt1) (second p2-pt3))
-                     (list (first p2-pt3) (second p2-pt1)))))))
+        (a:set-equal corner-pair1
+                     `((,(first p2-pt1) ,(second p2-pt3))
+                       (,(first p2-pt3) ,(second p2-pt1)))
+               :test #'equal))))
 
 (defun print-grid (in-list)
   (let* ((min-row 0)
@@ -125,8 +122,7 @@ p2:24")
                                   :test #'equal)))))
 
 (defun p2 (red-tiles)
-  (let* ((last-red (a:lastcar red-tiles))
-         (green-shape-edges (get-shape-edges red-tiles)))
+  (let* ((green-shape-edges (get-shape-edges red-tiles)))
     )
   )
 
