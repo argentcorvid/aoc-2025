@@ -56,30 +56,53 @@ p2:24")
          (max-col (max c2 c1))
          (row-span (- max-row min-row))
          (col-span (- max-col min-col)))
-    (cond ((zerop row-span)
+    (cond ((zerop row-span) ;horizontal
            (mapcar #'list (a:iota col-span :start min-col)
                    (make-list col-span :initial-element max-row)))
-          ((zerop col-span)
+          ((zerop col-span) ;vertical
            (mapcar #'list (make-list row-span :initial-element max-col)
                    (a:iota row-span :start min-row)))
-          (t (let ((m-err (* 2 (- row-span col-span))) ; bresenham
-                   (r r1))
-               (loop :for c :from c1 :to c2
-                     :collect (list r c)
-                     :when (> d 0)
-                       :do (incf r)
-                           (incf m-err (* 2 (- row-span col-span)))
-                     :else :do (incf d (* 2 row-span))))))))
+          ;; ((= row-span col-span) ;slope 1 diagonal
+          ;;  (let (())
+          ;;    (mapcar #'list (a:iota col-span :start min-col)
+          ;;            (a:iota row-span :start min-row))))
+          ;; (t (loop :with m-err = (* 2 (- row-span col-span))
+          ;;          :and r = min-row
+          ;;          :for c :from min-col
+          ;;          :collect (list c r)
+          ;;          :when (> m-err 0)
+          ;;            :do (incf r)
+          ;;                (incf m-err (* 2 (- row-span col-span)))
+          ;;          :else
+          ;;            :do (incf d (* 2 row-span))))
+          )))
 
 (defun get-shape-edges (vertices)
-  (loop :for ((col1 row1)
+  (loop :with last = (a:lastcar vertices)
+        :for ((col1 row1)
               (col2 row2))
-          :on vertices
+          :on (cons (list (first last)
+                          (second last))
+                    vertices)
         :by #'cdr
         :when (null col2)
           :do (setf col2 (first (first vertices))
                     row2 (second (first vertices)))
         :nconc (make-line col1 row1 col2 row2)))
+
+(defun get-rectangle-edges (corner-pair)
+  (destructuring-bind (pt1 pt3) corner-pair
+    (let ((pt2 (list (first pt1) (second pt3)))
+          (pt4 (list (first pt3) (second pt1))))
+      (get-shape-edges (list pt1 pt2 pt3 pt4)))))
+
+(defun rectangle-equal (corner-pair1 corner-pair2)
+  (or (equal corner-pair1 corner-pair2)
+      (destructuring-bind (p2-pt1 p2-pt3)
+          corner-pair2
+        (equal corner-pair1
+               (list (list (first p2-pt1) (second p2-pt3))
+                     (list (first p2-pt3) (second p2-pt1)))))))
 
 (defun print-grid (in-list)
   (let* ((min-row 0)
@@ -95,7 +118,11 @@ p2:24")
       (fresh-line)
       (princ l))))
 
-(defun all-red-or-green ())
+(defun point-inside-shape-p (pt shape-bounds)
+  (or (member pt shape-bounds :test #'equal)
+      (oddp (length (intersection shape-bounds
+                                  (apply #'make-line 0 (second pt) pt)
+                                  :test #'equal)))))
 
 (defun p2 (red-tiles)
   (let* ((last-red (a:lastcar red-tiles))
