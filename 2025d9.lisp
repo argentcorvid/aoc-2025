@@ -78,13 +78,15 @@ p2:24")
           )))
 
 (defun get-shape-edges (vertices)
-  (loop :for ((col1 row1)
-              (col2 row2))
-          :on `(,(copy-list (a:lastcar vertices)) ,@vertices) ; deep copy last, prepend to vertices to make closed loop
+  (loop  :with l = (a:lastcar vertices)
+         :for ((col1 row1)
+               (col2 row2))
+          :on (list* (list (first l) (second l)) vertices) ; deep copy last, prepend to vertices to make closed loop
         :unless (null col2)
           :nconc (make-line col1 row1 col2 row2)
             :into edges
-        :finally (return (delete-duplicates edges :test #'equal))))
+        :finally (return edges ;(delete-duplicates edges :test #'equal)
+                   )))
 
 (defun get-rectangle-edges (corner-pair)
   (destructuring-bind (pt1 pt3) corner-pair
@@ -126,9 +128,13 @@ p2:24")
          (max-rectangle 0))
     (declare (fixnum max-rectangle))
     (a:map-combinations (lambda (tile-pair)
-                          (when (every (a:rcurry #'point-inside-shape-p green-shape-edges)
-                                       (get-rectangle-edges tile-pair))
-                            (a:maxf max-rectangle (rectangle-area tile-pair))))
+                          (labels ((shrink-rectangle (corner-pair)
+                                     `((,(1+ (reduce #'min corner-pair :key #'first)) ,(1+ (reduce #'min corner-pair :key #'second)) )
+                                       (,(1- (reduce #'max corner-pair :key #'first)) ,(1- (reduce #'max corner-pair :key #'second)) ))))
+                            (unless (intersection (get-rectangle-edges (shrink-rectangle tile-pair))
+                                                  green-shape-edges
+                                                  :test #'equal)
+                              (a:maxf max-rectangle (rectangle-area tile-pair)))))
                         red-tiles
                         :length 2)
     max-rectangle))
