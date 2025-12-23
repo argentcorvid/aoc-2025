@@ -123,21 +123,28 @@ p2:24")
                                   (apply #'make-line 0 (second pt) pt)
                                   :test #'equal)))))
 
+(defun shrink-rectangle (corner-pair)
+  (list (list (1+ (reduce #'min corner-pair :key #'first)) (1+ (reduce #'min corner-pair :key #'second)))
+        (list (1- (reduce #'max corner-pair :key #'first)) (1- (reduce #'max corner-pair :key #'second)))))
+
 (defun p2 (red-tiles)
   (let* ((green-shape-edges (get-shape-edges red-tiles))
-         (max-rectangle 0))
-    (declare (fixnum max-rectangle))
+
+         (rectangles (list)))
+ 
     (a:map-combinations (lambda (tile-pair)
-                          (labels ((shrink-rectangle (corner-pair)
-                                     `((,(1+ (reduce #'min corner-pair :key #'first)) ,(1+ (reduce #'min corner-pair :key #'second)) )
-                                       (,(1- (reduce #'max corner-pair :key #'first)) ,(1- (reduce #'max corner-pair :key #'second)) ))))
-                            (unless (intersection (get-rectangle-edges (shrink-rectangle tile-pair))
-                                                  green-shape-edges
-                                                  :test #'equal)
-                              (a:maxf max-rectangle (rectangle-area tile-pair)))))
+                          (pushnew (list tile-pair (rectangle-area tile-pair)) rectangles
+                                   :test (lambda (a b)
+                                           (rectangle-equal a b))
+                                   :key #'first))
                         red-tiles
                         :length 2)
-    max-rectangle))
+    (dolist (rect (sort rectangles #'> :key #'second))
+      (let ((rect-bounds (get-shape-edges (first rect))))
+       (when (notany (lambda (red-tile)
+                          (point-inside-shape-p red-tile (shrink-rectangle rect-bounds)))
+                        red-tiles)
+         (return (second rect)))))))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
