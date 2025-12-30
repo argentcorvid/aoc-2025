@@ -49,41 +49,76 @@ p2:24")
                         :length 2)
     max-rectangle))
 
-(defun get-shape-edges (vertices)
-  (flet ((make-line (c1 r1 c2 r2)
-           (let* ((min-row (min r2 r1))
-                  (min-col (min c2 c1))
-                  (max-row (max r2 r1))
-                  (max-col (max c2 c1))
-                  (row-span (- max-row min-row))
-                  (col-span (- max-col min-col)))
-             (if (zerop row-span)
-                 (mapcar #'list (a:iota col-span :start min-col)
-                         (make-list col-span :initial-element max-row))
-                 (mapcar #'list (make-list row-span :initial-element max-col)
-                         (a:iota row-span :start min-row))
-                 ))))
-    (loop :for ((col1 row1)
-                (col2 row2))
-            :on vertices
-          :by #'cdr
-          :when (null col2)
-            :do (setf col2 (first (first vertices))
-                      row2 (second (first vertices)))
-          :nconc (make-line col1 row1 col2 row2))))
 
-(defun print-grid (in-list)
-  (let ((min-row 0)
-        (min-col 0)
-        (max-row ())
-        (max-col)
-        )))
+
+(defun get-shape-edges (vertices)
+  (loop :for (pt1 pt2)
+          :on vertices
+        :when (null pt2)
+          :do (setf pt2 (first vertices))
+        :collect (list pt1 pt2)))
+
+(defun get-rectangle-edges (corner-pair)
+  (if (apply #'some #'= corner-pair)
+      corner-pair
+      (destructuring-bind ((c1 r1)
+                           (c2 r2))
+          corner-pair
+        (get-shape-edges (list (first corner-pair)
+                               (list c1 r2)
+                               (second corner-pair)
+                               (list c2 r1))))))
+
+(defun edge-length (edge)
+  (if (apply #'some #'= edge)
+      (destructuring-bind ((c1 r1)
+                           (c2 r2))
+          edge
+        (max (abs (- c2 c1)) (abs (- r2 r1))))
+      (error "points for edge ~a should have one coordinate on the same axis" edge)))
+
+(defun edges-intersect (edge1 edge2)
+  (destructuring-bind ((e1-c1 e1-r1)
+                       (e1-c2 e1-r2))
+      edge1
+    (destructuring-bind ((e2-c1 e2-r1)
+                         (e2-c2 e2-r2))
+        edge2
+      (let ((denom (- (* (- e1-c1 e1-c2)
+                         (- e2-r1 e2-r2))
+                      (* (- e1-r1 e1-r2)
+                         (- e2-c1 e2-c2)))))
+        (unless (zerop denom)
+          (let ((v (/ (- (* (- e1-c1 e2-c1)
+                            (- e2-r1 e2-r2))
+                         (* (- e1-r1 e2-r1)
+                            (- e2-c1 e2-c2)))
+                      denom))
+                (u (/ (- (- (* (- e1-c1 e1-c2)
+                               (- e1-r1 e2-r1))
+                            (* (- e1-r1 e1-r2)
+                               (- e1-c1 e2-c1))))
+                      denom)))
+            (and (< 0 v 1)
+                 (< 0 u 1))))))))
+
+(defun valid-rectangle (rect-edges green-edges)
+  (notany () rect-edges ))
 
 (defun p2 (red-tiles)
-  (let* ((last-red (a:lastcar red-tiles))
-         (shape-edges (get-shape-edges red-tiles)))
-    )
-  )
+  (let* ((green-edges (sort (get-shape-edges red-tiles) #'> :key #'edge-length)) ;longer edges are more likely to intersect
+         (rectangles (list))
+         (max-rect '(((0 0) (1 1)) 1)))
+    (a:map-combinations (lambda (tile-pair)
+                          (unless (or (apply #'some #'= tile-pair) ;single row or column rectangles arent going to be the largest
+                                      (valid-rectangle (get-rectangle-edges tile-pair)
+                                                       
+                                                       green-edges))
+                            (let ((area (rectangle-area tile-pair)))
+                              (when (> area (second max-rect))
+                                (setf max-rect (list tile-pair area))))))
+                        red-tiles
+                        :length 2)))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
