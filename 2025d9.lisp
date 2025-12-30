@@ -70,14 +70,14 @@ p2:24")
                                (list c2 r1))))))
 
 (defun edge-length (edge)
-  (if (apply #'some #'= edge)
-      (destructuring-bind ((c1 r1)
-                           (c2 r2))
-          edge
-        (max (abs (- c2 c1)) (abs (- r2 r1))))
-      (error "points for edge ~a should have one coordinate on the same axis" edge)))
+  (assert  (apply #'some #'= edge) (edge) "points for edge ~a should have one coordinate on the same axis" edge)
+  (destructuring-bind ((c1 r1)
+                       (c2 r2))
+      edge
+    (max (abs (- c2 c1)) (abs (- r2 r1)))))
 
-(defun edges-intersect (edge1 edge2)
+(defun edges-intersect-p (edge1 edge2)
+  "check if edges intersect (but not on endpoints)"
   (destructuring-bind ((e1-c1 e1-r1)
                        (e1-c2 e1-r2))
       edge1
@@ -102,23 +102,39 @@ p2:24")
             (and (< 0 v 1)
                  (< 0 u 1))))))))
 
+(defun point-on-edge-p (pt shape-edges)
+  (flet ((pt-on-line-p (pt edge)
+           (destructuring-bind ((col1 row1)
+                                (col2 row2))
+               edge
+             (cond ((= row1 row2 (second pt))
+                    (<= (min col1 col2) (first pt) (max col1 col2)))
+                   ((= col1 col2 (first pt))
+                    (<= (min row1 row2) (second pt) (max row1 row2)))))))
+    (find pt shape-edges :test #'pt-on-line-p)))
+
+(defun point-inside-shape-p (pt shape-edges)
+  (let ((ray (list (list (first pt) 0) pt)))
+    (oddp (count ray shape-edges :test #'edges-intersect-p))))
+
 (defun valid-rectangle (rect-edges green-edges)
-  (notany () rect-edges ))
+  )
 
 (defun p2 (red-tiles)
   (let* ((green-edges (sort (get-shape-edges red-tiles) #'> :key #'edge-length)) ;longer edges are more likely to intersect
-         (rectangles (list))
-         (max-rect '(((0 0) (1 1)) 1)))
+         (max-rect '(((0 0) (0 1)) 2)))
     (a:map-combinations (lambda (tile-pair)
-                          (unless (or (apply #'some #'= tile-pair) ;single row or column rectangles arent going to be the largest
-                                      (valid-rectangle (get-rectangle-edges tile-pair)
-                                                       
-                                                       green-edges))
-                            (let ((area (rectangle-area tile-pair)))
-                              (when (> area (second max-rect))
-                                (setf max-rect (list tile-pair area))))))
+                          (unless (apply #'some #'= tile-pair) ;single row or column rectangles arent going to be the largest
+                            (when (valid-rectangle (get-rectangle-edges tile-pair)
+                                                   green-edges)
+                              (let ((area (rectangle-area tile-pair)))
+                                (when (> area (second max-rect))
+                                  (vformat "~&larger rectangle found: ~a, area: ~a" tile-pair area)
+                                  (setf max-rect (list tile-pair area)))))))
                         red-tiles
-                        :length 2)))
+                        :length 2)
+    (apply #'vformat "~&Largest rectangle: ~a, area: ~a" max-rect)
+    (second max-rect)))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
