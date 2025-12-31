@@ -115,7 +115,21 @@ p2:24")
 
 (defun point-inside-shape-p (pt shape-edges)
   (let ((ray (list (list (first pt) 0) pt)))
-    (oddp (count ray shape-edges :test #'edges-intersect-p))))
+                                        ;(oddp (count ray shape-edges :test #'edges-intersect-p))
+    (oddp (count-if (lambda (edge) ;count number of vertical edges in line with pt, pt is to left of
+                         (destructuring-bind ((edge-col1 edge-row1)
+                                              (edge-col2 edge-row2))
+                             edge
+                           (destructuring-bind (pt-col pt-row)
+                               pt
+                             (and (not (eql (> edge-row1 pt-row) ; edge not all above, below, or in line with point, discards horizontals 
+                                            (> edge-row2 pt-row)))
+                                  (< pt-col ; point is to left of..
+                                     (+ (/ (* (- edge-col2 edge-col1) ;width of edge, 0 if vertical, should be if make it this far
+                                              (- pt-row edge-row1)) ;row-distance from point to one edge point
+                                           (- edge-row2 edge-row1)) ;height of edge, 0 if horizontal!
+                                        edge-col1)))))) ; this edge
+                    shape-edges))))
 
 (defun valid-rectangle-p (rect-corner-pair green-edges)
   (let ((rect-edges (get-rectangle-edges rect-corner-pair)))
