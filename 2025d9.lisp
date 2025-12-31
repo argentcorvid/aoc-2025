@@ -125,10 +125,7 @@ p2:24")
                              (and (not (eql (> edge-row1 pt-row) ; edge not all above, below, or in line with point, discards horizontals 
                                             (> edge-row2 pt-row)))
                                   (< pt-col ; point is to left of..
-                                     (+ (/ (* (- edge-col2 edge-col1) ;width of edge, 0 if vertical, should be if make it this far
-                                              (- pt-row edge-row1)) ;row-distance from point to one edge point
-                                           (- edge-row2 edge-row1)) ;height of edge, 0 if horizontal!
-                                        edge-col1)))))) ; this edge
+                                     edge-col1))))) ; this edge
                     shape-edges))))
 
 (defun valid-rectangle-p (rect-corner-pair green-edges)
