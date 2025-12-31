@@ -138,10 +138,18 @@ p2:24")
                         red-tiles
                         :length 2)
 
-    (second (find-if (lambda (rect)
-                       (valid-rectangle-p rect green-edges))
-                     (sort rectangles #'> :key #'second )
-                     :key #'first))))
+    (let* ((filtered (remove-if-not (lambda (rect)
+                                      (or (find '(94645 50248) rect :test #'equal)
+                                          (find '(94645 48530) rect :test #'equal)))
+                                    rectangles
+                                    :key #'first))
+           (largest-valid (find-if (lambda (rect)
+                                     (vformat "~&testing ~a, " rect)
+                                     (valid-rectangle-p rect green-edges))
+                                   (sort filtered #'> :key #'second )
+                                   :key #'first)))
+      (vformat "found largest vaild. area ~a" (second largest-valid))
+      (second largest-valid))))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
