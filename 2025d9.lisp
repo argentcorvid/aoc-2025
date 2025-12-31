@@ -131,18 +131,18 @@ p2:24")
 
 (defun p2 (red-tiles)
   (let* ((green-edges (sort (get-shape-edges red-tiles) #'> :key #'edge-length)) ;longer edges are more likely to intersect
+         (rectangles (list))
          (max-rect '(((0 0) (0 1)) 2)))
     (a:map-combinations (lambda (tile-pair)
                           (unless (apply #'some #'= tile-pair) ;single row or column rectangles arent going to be the largest
-                            (vformat "~&testing ~a, " tile-pair)
-                            (when (valid-rectangle-p tile-pair green-edges)
-                              (let ((area (rectangle-area tile-pair)))
-                                (when (> area (second max-rect))
-                                  (vformat "~& larger rectangle found,area: ~a" area)
-                                  (setf max-rect (list tile-pair area)))))))
+                            (push (list tile-pair (rectangle-area tile-pair)) rectangles)))
                         red-tiles
                         :length 2)
-    (second max-rect)))
+    (dolist (rect (sort rectangles #'> :key #'second ))
+      (vformat "~&testing ~a, " rect)
+      (when (valid-rectangle-p (first rect) green-edges)
+        (vformat "~& larger rectangle found,area: ~a" (second rect))
+        (return (second rect))))))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
