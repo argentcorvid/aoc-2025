@@ -107,26 +107,27 @@ p2:24")
            (destructuring-bind ((col1 row1)
                                 (col2 row2))
                edge
-             (cond ((= row1 row2 (second pt))
-                    (<= (min col1 col2) (first pt) (max col1 col2)))
-                   ((= col1 col2 (first pt))
-                    (<= (min row1 row2) (second pt) (max row1 row2)))))))
+             (cond ((and (= row1 row2 (second pt))
+                         (<= (min col1 col2) (first pt) (max col1 col2))))
+                   ((and (= col1 col2 (first pt))
+                         (<= (min row1 row2) (second pt) (max row1 row2))))))))
     (find pt shape-edges :test #'pt-on-line-p)))
 
 (defun point-inside-shape-p (pt shape-edges)
   (let ((ray (list (list (first pt) 0) pt)))
-                                        ;(oddp (count ray shape-edges :test #'edges-intersect-p))
-    (oddp (count-if (lambda (edge) ;count number of vertical edges in line with pt, pt is to left of
-                         (destructuring-bind ((edge-col1 edge-row1)
-                                              (edge-col2 edge-row2))
-                             edge
-                           (destructuring-bind (pt-col pt-row)
-                               pt
-                             (and (not (eql (> edge-row1 pt-row) ; edge not all above, below, or in line with point, discards horizontals 
-                                            (> edge-row2 pt-row)))
-                                  (< pt-col ; point is to left of..
-                                     edge-col1))))) ; this edge
-                    shape-edges))))
+    (oddp (count ray shape-edges :test #'edges-intersect-p))
+    ;; (oddp (count-if (lambda (edge) ;count number of vertical edges in line with pt, pt is to left of
+    ;;                      (destructuring-bind ((edge-col1 edge-row1)
+    ;;                                           (edge-col2 edge-row2))
+    ;;                          edge
+    ;;                        (destructuring-bind (pt-col pt-row)
+    ;;                            pt
+    ;;                          (and (not (eql (> edge-row1 pt-row) ; edge not all above, below, or in line with point, discards horizontals 
+    ;;                                         (> edge-row2 pt-row)))
+    ;;                               (< pt-col ; point is to left of..
+    ;;                                  edge-col1))))) ; this edge
+    ;;                 shape-edges))
+    ))
 
 (defun valid-rectangle-p (rect-corner-pair green-edges)
   (let ((rect-edges (get-rectangle-edges rect-corner-pair)))
@@ -157,7 +158,8 @@ p2:24")
            (largest-valid (find-if (lambda (rect)
                                      (vformat "~&testing ~a, " rect)
                                      (valid-rectangle-p rect green-edges))
-                                   (sort filtered #'> :key #'second )
+                                  ; (sort filtered #'> :key #'second )
+                                   (sort rectangles #'> :key #'second)
                                    :key #'first)))
       (vformat "found largest vaild. area ~a" (second largest-valid))
       (second largest-valid))))
