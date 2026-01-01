@@ -31,7 +31,7 @@
 
 (defun parse-lights (lights)
   (declare (string lights))
-  (loop :for c :across (reverse lights)
+  (loop :for c :across lights
         :for pos :from 0
         :with out-state = (make-array (list (length lights)) :element-type 'bit)
         :when (char= c #\#)
