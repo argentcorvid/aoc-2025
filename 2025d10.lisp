@@ -73,7 +73,14 @@
         :summing (1- (length (bfs (make-array (length required-state) :element-type 'bit)
                                   buttons
                                   #'press-button
-                                  :end-state required-state))))) 
+                                  :end-state required-state)))))
+
+(defun p1-powerset (machine-descriptions)
+  (loop :for (req-st btns) :in machine-descriptions
+        :summing (1- (length (find-if (lambda (seq)
+                                        (let ((on (reduce #'bit-xor seq)))
+                                          (equal on req-st)))
+                                      (rest (s:powerset btns)))))))
 
 (defun p2 ()
   )
