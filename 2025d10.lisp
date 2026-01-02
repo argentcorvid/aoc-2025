@@ -51,28 +51,29 @@
 (defun press-button (light-state toggles)
   (bit-xor light-state toggles))
 
-(defun bfs (start-state end-state edges neighbor-func)
+(defun bfs (start-state edges neighbor-func &key (end-state nil end-supplied-p))
+
   (let ((queue (s:queue (list start-state)))
-        (seen (list start-state))
+        (seen (s:dict start-state t))
         (path (list)))
     (loop
       (when (s:queue-empty-p queue)
-        (return (nreverse path)))
+        (return-from bfs (nreverse path)))
       (setf path (s:deq queue))
-      (when (equal (first path) end-state)
-        (return (nreverse path)))
+      (when (and end-supplied-p (equal (first path) end-state))
+        (return-from bfs (nreverse path)))
       (dolist (e edges)
         (let ((n (funcall neighbor-func (first path) e)))
-          (unless (member n seen :test #'equal)
-            (push n seen)
+          (unless (s:@ seen n)
+            (setf (s:@ seen n) t)
             (s:enq (append (list n) path) queue)))))))
 
 (defun p1 (machine-descriptions)
   (loop :for (required-state buttons) :in machine-descriptions
         :summing (1- (length (bfs (make-array (length required-state) :element-type 'bit)
-                                  required-state
                                   buttons
-                                  #'press-button))))) 
+                                  #'press-button
+                                  :end-state required-state))))) 
 
 (defun p2 ()
   )
