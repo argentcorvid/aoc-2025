@@ -1,8 +1,9 @@
 ;;;2025 day 10
 
 (eval-when (:compile-toplevel :load-toplevel)
-  (ql:quickload '(:alexandria :str))
-  (add-package-local-nickname 'a 'alexandria-2))
+  (ql:quickload '(:alexandria :str :serapeum))
+  (add-package-local-nickname 'a 'alexandria-2)
+  (add-package-local-nickname 's 'serapeum))
 
 (defparameter *day-number* 10)
 (defparameter *input-name-template* "2025d~dinput.txt")
@@ -56,30 +57,27 @@
   (bit-xor light-state toggles))
 
 (defun bfs (start-state end-state edges neighbor-func)
-  (let ((queue (list start-state))
+  (let ((queue (s:queue (list start-state)))
         (seen (list start-state))
-        (path (list))
-        (steps 0)
-        state)
+        (path (list)))
     (loop
-      (when (endp queue)
-        (return (values (nreverse path) steps)))
-      (setf state (pop queue))
-      (incf steps)
-      (push state path)
-      (when (equal state end-state)
-        (return (values (nreverse path) steps)))
-      (let ((neighbors (mapcar (a:curry neighbor-func state) edges)))
-        
-        ))))
+      (when (s:queue-empty-p queue)
+        (return (nreverse path)))
+      (setf path (s:deq queue))
+      (when (equal (first path) end-state)
+        (return (nreverse path)))
+      (dolist (e edges)
+        (let ((n (funcall neighbor-func (first path) e)))
+          (unless (member n seen :test #'equal)
+            (push n seen)
+            (s:enq (append (list n) path) queue)))))))
 
 (defun p1 (machine-descriptions)
-  (let ((button-presses-sum 0))
-    (dolist (desc machine-descriptions button-presses-sum)
-      (destructuring-bind (required-lights buttons &optional joltage)
-          desc
-        (let ((light-state (make-array (length required-lights) :element-type 'bit)))
-          ))))) 
+  (loop :for (required-state buttons) :in machine-descriptions
+        :summing (1- (length (bfs (make-array (length required-state) :element-type 'bit)
+                                  required-state
+                                  buttons
+                                  #'press-button))))) 
 
 (defun p2 ()
   )
