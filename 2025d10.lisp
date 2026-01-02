@@ -50,8 +50,36 @@
 (defun parse-joltage (joltage-string)
   (mapcar #'parse-integer (str:split #\, joltage-string)))
 
-(defun p1 ()
-  ) 
+(declaim (inline press-button))
+
+(defun press-button (light-state toggles)
+  (bit-xor light-state toggles))
+
+(defun bfs (start-state end-state edges neighbor-func)
+  (let ((queue (list start-state))
+        (seen (list start-state))
+        (path (list))
+        (steps 0)
+        state)
+    (loop
+      (when (endp queue)
+        (return (values (nreverse path) steps)))
+      (setf state (pop queue))
+      (incf steps)
+      (push state path)
+      (when (equal state end-state)
+        (return (values (nreverse path) steps)))
+      (let ((neighbors (mapcar (a:curry neighbor-func state) edges)))
+        
+        ))))
+
+(defun p1 (machine-descriptions)
+  (let ((button-presses-sum 0))
+    (dolist (desc machine-descriptions button-presses-sum)
+      (destructuring-bind (required-lights buttons &optional joltage)
+          desc
+        (let ((light-state (make-array (length required-lights) :element-type 'bit)))
+          ))))) 
 
 (defun p2 ()
   )
