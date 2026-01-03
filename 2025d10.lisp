@@ -77,10 +77,11 @@
 
 (defun p1-powerset (machine-descriptions)
   (loop :for (req-st btns) :in machine-descriptions
-        :summing (1- (length (find-if (lambda (seq)
-                                        (let ((on (reduce #'bit-xor seq)))
-                                          (equal on req-st)))
-                                      (rest (s:powerset btns)))))))
+        :summing (length (find-if (lambda (seq)
+                                    (let ((on (reduce #'bit-xor seq)))
+                                      (equal on req-st)))
+                                  (sort (rest (s:powerset btns))
+                                        #'< :key #'length)))))
 
 (defun p2 ()
   )
