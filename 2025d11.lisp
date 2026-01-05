@@ -21,6 +21,22 @@ ggg: out
 hhh: ccc fff iii
 iii: out"))
 
+(defparameter *test-input-2*
+  (str:lines
+   "svr: aaa bbb
+aaa: fft
+fft: ccc
+bbb: tty
+tty: ccc
+ccc: ddd eee
+ddd: hub
+hub: fff
+eee: dac
+dac: fff
+fff: ggg hhh
+ggg: out
+hhh: out"))
+
 (defparameter *verbose* nil)
 
 (defun vformat (format-string &rest args)
@@ -61,8 +77,24 @@ iii: out"))
 (defun p1 (machines)
   (length (dfs-all "you" (lambda (k) (gethash k machines)) :end-state "out"))) 
 
-(defun p2 ()
-  )
+(defun p2 (machines)
+ ; (setf (s:@ machines "out") nil)
+  (let ((cache (make-hash-table :test 'equal)))
+    (labels ((count-paths (current dest)
+               (cond ((gethash (list current dest) cache))
+                     ((string= current dest)
+                      (setf (gethash (list current dest) cache) 1))
+                     ((setf (gethash (list current dest) cache)
+                            (loop :for next :in (gethash current machines)
+                                  :summing (count-paths next dest))))))
+             (combine-paths (starts ends)
+               (reduce #'* (mapcar #'count-paths starts ends))))
+      (let ((start-groups '(("svr" "fft" "dac")
+                            ("svr" "dac" "fft")))
+            (end-groups   '(("fft" "dac" "out")
+                            ("dac" "fft" "out"))))
+        (reduce #'+ (mapcar #'combine-paths
+                            start-groups end-groups))))))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
@@ -78,4 +110,7 @@ iii: out"))
 
 (defun test (&rest parts)
   (let ((*verbose* t))
-    (run parts (parse-input *test-input*))))
+    (dolist (part (a:ensure-list parts))
+      (ccase part
+        (1 (run 1 (parse-input *test-input*)))
+        (2 (run 2 (parse-input *test-input-2*)))))))
