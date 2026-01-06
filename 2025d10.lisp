@@ -83,8 +83,46 @@
                                   (sort (rest (s:powerset btns))
                                         #'< :key #'length)))))
 
-(defun p2 ()
-  )
+(defun p2 (machine-descriptions)
+;;;dijkstra approach from                                       ;;;https://github.com/fizbin/adventofcode/blob/main/aoc2025/aoc10b.py
+  (let ((pressings (list))
+        (press-by-sig (make-hash-table :test 'equal)))
+    (labels ((moves (buttons jolts)
+               (loop :for press fixnum :from 0 :below (expt 2 (length buttons))
+                     :with pressed-jolts := (make-list (length jolts) :initial-element 0)
+                     :and pcount fixnum := 0
+                     :do (loop :for button :in buttons
+                               :for idx fixnum :from 0
+                               :when (plusp (logand press (expt 2 idx)))
+                                 :do (incf pcount)
+                                     (loop :for j :in button
+                                           :do (incf (elt pressed-jolts j))))
+                         (let ((k (mapcar (a:rcurry #'mod 2) pressed-jolts)))
+                           (a:appendf (gethash k press-by-sig (list))
+                                      (list press)))
+                         (append pressings (list pcount pressed-jolts)))
+               (loop :with q := (s:queue (list 0 1 jolts))
+                     :and seen := (make-hash-table :test 'equal)
+                     :until (s:queue-empty-p q)
+                     :for (sofar r where) = (s:deq q)
+                     :unless (gethash (list r where) seen)
+                       :do (setf (gethash (list r where) seen) t)
+                           (when (every #'zerop where)
+                             (return-from moves sofar))
+                           (loop :for (dist where2) :in (allowed-moves r where)
+                                 :do (s:undeq (list (+ sofar dist) (* r 2) where2))))
+               (error "uhoh"))
+             (allowed-moves (r-factor jolts-left)
+               (loop :with sig := (mapcar (lambda (j) (mod (floor j r-factor) 2)) jolts-left)
+                     :for press :in (gethash sig press-by-sig (list))
+                     :for (pcount pressed-jolts) := (elt pressings press)
+                     :for new-jolts := (mapcar (lambda (jl pj) (- jl (* pj r-factor))) jolts-left pressed-jolts)
+                     :unless (some #'minusp new-jolts)
+                       :collect (list (* r-factor pcount) new-jolts))))
+      (declare (inline moves allowed-moves))
+      (loop :for (nil buttons jolts) :in machines
+           ; :for idx :from 0
+            :summing (moves buttons jolts)))))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
