@@ -110,7 +110,7 @@
                            (when (every #'zerop where)
                              (return-from moves sofar))
                            (loop :for (dist where2) :in (allowed-moves r where)
-                                 :do (s:undeq (list (+ sofar dist) (* r 2) where2))))
+                                 :do (s:undeq (list (+ sofar dist) (* r 2) where2) q)))
                (error "uhoh"))
              (allowed-moves (r-factor jolts-left)
                (loop :with sig := (mapcar (lambda (j) (mod (floor j r-factor) 2)) jolts-left)
@@ -120,7 +120,7 @@
                      :unless (some #'minusp new-jolts)
                        :collect (list (* r-factor pcount) new-jolts))))
       (declare (inline moves allowed-moves))
-      (loop :for (nil buttons jolts) :in machines
+      (loop :for (nil buttons jolts) :in machine-descriptions
            ; :for idx :from 0
             :summing (moves buttons jolts)))))
 
