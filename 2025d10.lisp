@@ -1,9 +1,10 @@
 ;;;2025 day 10
 
 (eval-when (:compile-toplevel :load-toplevel)
-  (ql:quickload '(:alexandria :str :serapeum))
+  (ql:quickload '(:alexandria :str :serapeum :priority-queue :generic-cl.comparison))
   (add-package-local-nickname 'a 'alexandria-2)
-  (add-package-local-nickname 's 'serapeum))
+  (add-package-local-nickname 's 'serapeum)
+  (add-package-local-nickname 'gcmp 'generic-cl.comparison))
 
 (defparameter *day-number* 10)
 (defparameter *input-name-template* "2025d~dinput.txt")
@@ -83,35 +84,52 @@
                                   (sort (rest (s:powerset btns))
                                         #'< :key #'length)))))
 
+(defmethod gcmp:lessp ((a cons) (b cons))
+  (or (gcmp:lessp (car a) (car b))
+      (gcmp:lessp (cdr a) (cdr b))))
+
+(defmethod gcmp:lessp ((a (eql nil)) (b (eql nil))) nil)
+
+(defmethod gcmp:lessp ((a cons) (b (eql nil))) nil)
+
+(defmethod gcmp:lessp ((a (eql nil)) (b cons)) t) ;a is shorter
+
 (defun p2 (machine-descriptions)
 ;;;dijkstra approach from                                       ;;;https://github.com/fizbin/adventofcode/blob/main/aoc2025/aoc10b.py
   (let ((pressings (list))
         (press-by-sig (make-hash-table :test 'equal)))
-    (labels ((moves (buttons jolts)
+    (labels ((bitv-to-bitpos (bitvec-in) ;unparse for how the guy wrote it
+               (declare ((vector bit) bitvec-in))
+               (loop :for bit :across bitvec-in
+                     :for idx :from 0
+                     :when (plusp bit)
+                       :collect idx))
+             (moves (buttons jolts)
                (loop :for press fixnum :from 0 :below (expt 2 (length buttons))
                      :with pressed-jolts := (make-list (length jolts) :initial-element 0)
                      :and pcount fixnum := 0
-                     :do (loop :for button :in buttons
-                               :for idx fixnum :from 0
-                               :when (plusp (logand press (expt 2 idx)))
+                     :do (loop :for button list :in buttons
+                               :for b-idx fixnum :from 0
+                               :unless (zerop (logand (expt 2 b-idx) press))
                                  :do (incf pcount)
                                      (loop :for j :in button
                                            :do (incf (elt pressed-jolts j))))
                          (let ((k (mapcar (a:rcurry #'mod 2) pressed-jolts)))
                            (a:appendf (gethash k press-by-sig (list))
                                       (list press)))
-                         (append pressings (list pcount pressed-jolts)))
-               (loop :with q := (s:queue (list 0 1 jolts))
-                     :and seen := (make-hash-table :test 'equal)
-                     :until (s:queue-empty-p q)
-                     :for (sofar r where) = (s:deq q)
-                     :unless (gethash (list r where) seen)
-                       :do (setf (gethash (list r where) seen) t)
-                           (when (every #'zerop where)
-                             (return-from moves sofar))
-                           (loop :for (dist where2) :in (allowed-moves r where)
-                                 :do (s:undeq (list (+ sofar dist) (* r 2) where2) q)))
-               (error "uhoh"))
+                         (a:appendf pressings (list (list pcount pressed-jolts))))
+               (let ((heap (pqueue:make-pqueue #'gcmp:less-equal-p)))
+                 (loop :initially (pqueue:pqueue-push jolts (list 0 1)  heap) 
+                       :with seen := (make-hash-table :test 'equal)
+                       :until (pqueue:pqueue-empty-p heap)
+                       :for (sofar (r where)) = (multiple-value-list (pqueue:pqueue-pop heap))
+                       :unless (gethash (list r where) seen)
+                         :do (setf (gethash (list r where) seen) t)
+                             (when (every #'zerop where)
+                               (return-from moves sofar))
+                             (loop :for (dist where2) :in (allowed-moves r where)
+                                   :do (pqueue:pqueue-push where2 (list (+ sofar dist) (* 2 r)) heap))))
+               (error "uhoh queue empty"))
              (allowed-moves (r-factor jolts-left)
                (loop :with sig := (mapcar (lambda (j) (mod (floor j r-factor) 2)) jolts-left)
                      :for press :in (gethash sig press-by-sig (list))
@@ -120,8 +138,9 @@
                      :unless (some #'minusp new-jolts)
                        :collect (list (* r-factor pcount) new-jolts))))
       (declare (inline moves allowed-moves))
-      (loop :for (nil buttons jolts) :in machine-descriptions
-           ; :for idx :from 0
+      (loop :for (nil bv jolts) :in machine-descriptions
+            :for buttons = (mapcar #'bitv-to-bitpos bv)
+                                        ; :for idx :from 0
             :summing (moves buttons jolts)))))
 
 (defun run (parts-list data)
