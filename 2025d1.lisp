@@ -33,20 +33,17 @@ L82")
         counting (zerop dial))) 
 
 (defun p2 (movement-list)
+  (format t "~&dial: 50,")
   (loop :for dial fixnum := 50 :then new-dial
         :for steps fixnum :in movement-list
-        :for (times-through-100 new-dial) (fixnum fixnum) := (multiple-value-list (truncate (+ dial steps) 100))
+        :for (times-through-100 new-dial) (fixnum fixnum) := (multiple-value-list (floor (+ dial steps) 100))
         :do (setf times-through-100 (abs times-through-100))
-        :when (minusp new-dial)
-          :do (setf new-dial (+ 100 new-dial))
-              (when (plusp dial) (incf times-through-100))
-        :end
-        :when (and (plusp times-through-100)
-                   (zerop new-dial))
-          :do (decf times-through-100)
-        :do 
-           (format t "~&dial: ~a, steps: ~a, now on 0: ~:[f~;T~], times around: ~a" dial steps (zerop new-dial) times-through-100)
-
+            (when (and (plusp times-through-100)
+                       (or (zerop dial)
+                           (zerop new-dial)))
+              (decf times-through-100))
+            (format t " steps: ~4d, times @0: ~3d~&dial: ~2d," steps times-through-100 new-dial)
+            
         :counting (zerop new-dial) fixnum
         :summing times-through-100 fixnum)) 
 
