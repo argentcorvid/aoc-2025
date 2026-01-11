@@ -28,6 +28,18 @@
                    max-pos position)
         finally (return (values max-joltage max-pos))))
 
+(defun min-and-pos (battery-bank-in &key (start 0) (end (length battery-bank-in)))
+    (declare (type fixnum start end)
+                        (type vector battery-bank-in))
+    (loop for position fixnum from start below end
+                  for battery-joltage character = (aref battery-bank-in position)
+                  with min-joltage character = #\A
+                  with min-pos fixnum = end
+                  when (char< battery-joltage min-joltage)
+                              do (setf min-joltage battery-joltage
+                                                          min-pos position)
+                  finally (return (values min-joltage min-pos))))
+
 (defun highest-bank-joltage (battery-bank)
   (if (str:empty? battery-bank)
       0
@@ -41,13 +53,23 @@
 
 (defun highest-override-joltage (battery-bank &key (number-to-keep 12))
   "throw out the (length - 12) lowest joltages"
-  (let* ((bank-size (length battery-bank))
-         (number-to-discard (- bank-size number-to-keep)))
-    )
-  )
+  (labels ((rec (str start end)
+             (if (<= (length str) number-to-keep)
+                 str
+                 (multiple-value-bind (ch pos)
+                     (min-and-pos str :start start :end end)
+                   (let ((new (str:concat (subseq str 0 pos)
+                                          (subseq str (1+ pos)))))
+                     (rec new (- (length new) number-to-keep) (1- (length new))))))))
+    (parse-integer (rec battery-bank (- (length battery-bank) number-to-keep) (length battery-bank)))))
 
-(defun p2 ()
-  )
+(defun p2 (battery-list)
+  (let ((joltages (mapcar #'highest-override-joltage battery-list)))
+    (when *verbose*
+      (mapcar (lambda (in out)
+                (format t "~&~a~%=> ~12d" in out))
+              battery-list joltages ))
+    (reduce #'+ joltages)))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
