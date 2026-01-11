@@ -60,15 +60,16 @@
                      (min-and-pos str :start start :end end)
                    (let ((new (str:concat (subseq str 0 pos)
                                           (subseq str (1+ pos)))))
-                     (rec new (- (length new) number-to-keep) (1- (length new))))))))
-    (parse-integer (rec battery-bank (- (length battery-bank) number-to-keep) (length battery-bank)))))
+                     (rec new 0 number-to-keep))))))
+    (parse-integer (rec battery-bank 0 number-to-keep))))
 
 (defun p2 (battery-list)
   (let ((joltages (mapcar #'highest-override-joltage battery-list)))
     (when *verbose*
       (mapcar (lambda (in out)
                 (format t "~&~a~%=> ~12d" in out))
-              battery-list joltages ))
+              battery-list joltages )
+      (fresh-line))
     (reduce #'+ joltages)))
 
 (defun run (parts-list data)
