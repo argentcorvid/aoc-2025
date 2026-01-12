@@ -28,18 +28,6 @@
                    max-pos position)
         finally (return (values max-joltage max-pos))))
 
-(defun min-and-pos (battery-bank-in &key (start 0) (end (length battery-bank-in)))
-    (declare (type fixnum start end)
-                        (type vector battery-bank-in))
-    (loop for position fixnum from start below end
-                  for battery-joltage character = (aref battery-bank-in position)
-                  with min-joltage character = #\A
-                  with min-pos fixnum = end
-                  when (char< battery-joltage min-joltage)
-                              do (setf min-joltage battery-joltage
-                                                          min-pos position)
-                  finally (return (values min-joltage min-pos))))
-
 (defun highest-bank-joltage (battery-bank)
   (if (str:empty? battery-bank)
       0
