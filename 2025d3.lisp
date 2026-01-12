@@ -52,7 +52,12 @@
             (parse-integer best))))))
 
 (defun highest-override-joltage (battery-bank &key (number-to-keep 12))
-  "throw out the (length - 12) lowest joltages"
+  "throw out the (length - number-to-keep) lowest joltages
+
+-extend logic/generalize from highest-bank-joltage
+-- 1. find max digit in bank from start to (- (length bank) number-to-keep -1)
+-- 2. collect/concat character
+-- 3. reucrse, using (+ pos 1) as start and (- end 1) as end, stop when length = number-to-keep"
   (labels ((rec (str start end)
              (if (<= (length str) number-to-keep)
                  str
