@@ -57,16 +57,18 @@
 -extend logic/generalize from highest-bank-joltage
 -- 1. find max digit in bank from start to (- (length bank) number-to-keep -1)
 -- 2. collect/concat character
--- 3. reucrse, using (+ pos 1) as start and (- end 1) as end, stop when length = number-to-keep"
-  (labels ((rec (str start end)
-             (if (<= (length str) number-to-keep)
-                 str
+-- 3. reucrse, using (+ pos 1) as start and (+ end 1) as end, stop when length = number-to-keep"
+  (declare (simple-string battery-bank)
+           (fixnum number-to-keep))
+  (labels ((rec (str start end &optional (accum (make-string 0)))
+             (declare (dynamic-extent str start end)
+                      (fixnum start end))
+             (if (= number-to-keep (length accum))
+                 accum
                  (multiple-value-bind (ch pos)
-                     (min-and-pos str :start start :end end)
-                   (let ((new (str:concat (subseq str 0 pos)
-                                          (subseq str (1+ pos)))))
-                     (rec new 0 number-to-keep))))))
-    (parse-integer (rec battery-bank 0 number-to-keep))))
+                     (max-and-pos str :start start :end end)
+                   (rec str (1+ pos) (1+ end) (str:concat accum (string ch)))))))
+    (parse-integer (rec battery-bank 0 (- (length battery-bank) number-to-keep -1)))))
 
 (defun p2 (battery-list)
   (let ((joltages (mapcar #'highest-override-joltage battery-list)))
