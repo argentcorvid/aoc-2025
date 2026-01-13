@@ -50,15 +50,17 @@
 -- 3. reucrse, using (+ pos 1) as start and (+ end 1) as end, stop when length = number-to-keep"
   (declare (simple-string battery-bank)
            (fixnum number-to-keep))
-  (labels ((rec (str start end &optional (accum (make-string 0)))
-             (declare (dynamic-extent str start end)
-                      (fixnum start end))
-             (if (= number-to-keep (length accum))
-                 accum
-                 (multiple-value-bind (ch pos)
-                     (max-and-pos str :start start :end end)
-                   (rec str (1+ pos) (1+ end) (str:concat accum (string ch)))))))
-    (parse-integer (rec battery-bank 0 (- (length battery-bank) number-to-keep -1)))))
+  (let ((bank-size (length battery-bank)))
+    (labels ((rec (str start end &optional (accum (make-string 0)))
+               (declare (fixnum start end)
+                        (simple-string str accum))
+               (if (= number-to-keep (length accum))
+                   accum
+                   (multiple-value-bind (ch pos)
+                       (max-and-pos str :start start :end end)
+                     (rec str (1+ pos) (1+ end) (str:concat accum (string ch)))))))
+      (parse-integer (rec battery-bank 0 (- (length battery-bank) number-to-keep -1))))))
+
 (defun loop-max-joltage (battery-bank number-to-keep)
   (loop :with bank-size fixnum := (length battery-bank)
         :with search-end fixnum := (- bank-size number-to-keep -1)
