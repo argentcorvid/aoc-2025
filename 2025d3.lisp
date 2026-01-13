@@ -13,6 +13,8 @@
         "234234234234278"
         "818181911112111"))
 
+(defvar *verbose* nil)
+
 (defun p1 (battery-list)
   (reduce #'+ (mapcar #'highest-bank-joltage battery-list))) 
 
@@ -57,15 +59,27 @@
                      (max-and-pos str :start start :end end)
                    (rec str (1+ pos) (1+ end) (str:concat accum (string ch)))))))
     (parse-integer (rec battery-bank 0 (- (length battery-bank) number-to-keep -1)))))
+(defun loop-max-joltage (battery-bank number-to-keep)
+  (loop :with bank-size fixnum := (length battery-bank)
+        :with search-end fixnum := (- bank-size number-to-keep -1)
+        :for search-start fixnum := 0 :then (1+ pos)
+        :for (ch pos) (character fixnum) := (multiple-value-list (max-and-pos battery-bank :start search-start :end search-end))
+        :collect ch :into found
+        :when (= (- bank-size number-to-keep 1) (length found))
+          :return (parse-integer (concatenate 'string found (subseq battery-bank (1+ search-end))))))
 
 (defun p2 (battery-list)
-  (let ((joltages (mapcar #'highest-override-joltage battery-list)))
+  (let ((joltages (mapcar #'highest-override-joltage battery-list))
+        (loop-joltages (mapcar (a:rcurry #'loop-max-joltage 12) battery-list)))
     (when *verbose*
       (mapcar (lambda (in out)
                 (format t "~&~a~%=> ~12d" in out))
               battery-list joltages )
       (fresh-line))
-    (reduce #'+ joltages)))
+    (when (every #'= joltages loop-joltages)
+      (format t "~&they match!"))
+    (values (reduce #'+ joltages)
+            (reduce #'+ loop-joltages))))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
