@@ -22,7 +22,8 @@
   (declare (type fixnum start end)
            (type vector battery-bank-in))
   (if (= 1 (- start end))
-      (aref battery-bank-in start)
+      (values (aref battery-bank-in start)
+              start)
       (loop for position fixnum from start below end
             for battery-joltage character = (aref battery-bank-in position)
             with max-joltage character = #\0
@@ -39,7 +40,7 @@
           (max-and-pos battery-bank :end (1- (length battery-bank)))
         (multiple-value-bind (2nd-highest-joltage 2nd-highest-pos)
             (max-and-pos battery-bank :start (1+ highest-position))
-          (let ((best (concatenate 'string (list highest-joltage 2nd-highest-joltage))))
+          (let ((best (coerce (list highest-joltage 2nd-highest-joltage) 'string)))
             (format t "~&bank: ~a, best joltage: ~a~&" battery-bank best)
             (parse-integer best))))))
 
