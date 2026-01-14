@@ -57,20 +57,24 @@
     (labels ((rec (str start end &optional (accum (make-string 0)))
                (declare (fixnum start end)
                         (simple-string str accum))
+               (assert (>= number-to-keep (length accum)) (accum) "accum too long!")
+               ;;hmmmm this is weird. on SBCL 2.5.0 on work computer this function will never return if the assert above is commented out. also without the 'min' call below, it will try to run past the end of the string in max-and-pos.
+               ;; on 2.3.3 on my phone it works correctly no matter what.
+               ;; 2.6.0 on desktop the previous versions work fine
                (if (= number-to-keep (length accum))
-                   accum
+                   (return-from rec accum)
                    (multiple-value-bind (ch pos)
                        (max-and-pos str :start start :end end)
-                     (rec str (1+ pos) (1+ end) (str:concat accum (string ch)))))))
+                     (rec str (1+ pos) (min (1+ end) bank-size) (str:concat accum (string ch)))))))
       (parse-integer (rec battery-bank 0 (- (length battery-bank) number-to-keep -1))))))
 
 (defun loop-max-joltage (battery-bank &optional (number-to-keep 12))
   (loop :with bank-size fixnum := (length battery-bank)
-        :for search-end fixnum := (- bank-size number-to-keep -1) :then (1+ search-end)
+        :for search-end fixnum := (- bank-size number-to-keep -1) :then (min (1+ search-end) bank-size)
         :for search-start fixnum := 0 :then (1+ pos)
         :for (ch pos) (character fixnum) := (multiple-value-list (max-and-pos battery-bank :start search-start :end search-end))
         :collect ch :into found
-        :when (= number-to-keep (length found))
+        :when (<= number-to-keep (length found))
           :return (parse-integer (coerce found 'string))))
 
 (defun p2 (battery-list)
