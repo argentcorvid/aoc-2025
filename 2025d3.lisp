@@ -21,14 +21,16 @@
 (defun max-and-pos (battery-bank-in &key (start 0) (end (length battery-bank-in)))
   (declare (type fixnum start end)
            (type vector battery-bank-in))
-  (loop for position fixnum from start below end
-        for battery-joltage character = (aref battery-bank-in position)
-        with max-joltage character = #\0
-        with max-pos fixnum = 0
-        when (char< max-joltage battery-joltage)
-          do (setf max-joltage battery-joltage
-                   max-pos position)
-        finally (return (values max-joltage max-pos))))
+  (if (= 1 (- start end))
+      (aref battery-bank-in start)
+      (loop for position fixnum from start below end
+            for battery-joltage character = (aref battery-bank-in position)
+            with max-joltage character = #\0
+            with max-pos fixnum = 0
+            when (char< max-joltage battery-joltage)
+              do (setf max-joltage battery-joltage
+                       max-pos position)
+            finally (return (values max-joltage max-pos)))))
 
 (defun highest-bank-joltage (battery-bank)
   (if (str:empty? battery-bank)
