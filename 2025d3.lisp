@@ -61,14 +61,14 @@
                      (rec str (1+ pos) (1+ end) (str:concat accum (string ch)))))))
       (parse-integer (rec battery-bank 0 (- (length battery-bank) number-to-keep -1))))))
 
-(defun loop-max-joltage (battery-bank number-to-keep)
+(defun loop-max-joltage (battery-bank &optional (number-to-keep 12))
   (loop :with bank-size fixnum := (length battery-bank)
-        :with search-end fixnum := (- bank-size number-to-keep -1)
+        :for search-end fixnum := (- bank-size number-to-keep -1) :then (1+ search-end)
         :for search-start fixnum := 0 :then (1+ pos)
         :for (ch pos) (character fixnum) := (multiple-value-list (max-and-pos battery-bank :start search-start :end search-end))
         :collect ch :into found
-        :when (= (- bank-size number-to-keep 1) (length found))
-          :return (parse-integer (concatenate 'string found (subseq battery-bank (1+ search-end))))))
+        :when (= number-to-keep (length found))
+          :return (parse-integer (coerce found 'string))))
 
 (defun p2 (battery-list)
   (let ((joltages (mapcar #'highest-override-joltage battery-list))
