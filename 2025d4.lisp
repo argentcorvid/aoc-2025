@@ -56,12 +56,10 @@
   (let ((my-grid (adjust-array paper-grid (array-dimensions paper-grid) ;maybe adjust-array
                                )))
     (loop for movables = (p1 my-grid)
-          with number-moved fixnum = 0
-          while (< 0 (length movables))
+          until (null movables)
+          sum (length movables) fixnum
           do (dolist (pos movables)
-               (setf (apply #'aref my-grid pos) #\M))
-             (incf number-moved (length movables))
-          finally (return number-moved))))
+               (setf (apply #'aref my-grid pos) #\M)))))
 
 (defun run (parts-list data)
   (dolist (part (a:ensure-list parts-list))
