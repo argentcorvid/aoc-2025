@@ -25,7 +25,7 @@ L82")
             (ecase (schar line 0)
               (#\L (- (parse-integer line :start 1)))
               (#\R (parse-integer line :start 1))))
-          (str:lines input-string)))
+          (str:lines input-string :omit-nulls t)))
 
 (defun p1 (movement-list)
   (loop with dial of-type fixnum = 50
@@ -39,14 +39,54 @@ L82")
                       (the fixnum (parse-integer (subseq line 1)))
                       (the fixnum (- (parse-integer (subseq line 1)))))))
 
-(defun series-p1 (movement-series)
-  (let ((dial 50))
-    (declare (fixnum dial)
-             (series::basic-series movement-series))
-    (series:collect-length
-     (series:choose-if #'identity
-                       (series:mapping ((steps movement-series))
-                                       (zerop (setq dial (mod (+ dial steps) 100))))))))
+(defun series-read-and-parse (filename)
+  (series:mapping ((line (series:scan-file filename #'read-line)))
+                  (if (char= #\R (char line 0))
+                      (the fixnum (parse-integer (subseq line 1)))
+                      (the fixnum (- (parse-integer (subseq line 1)))))))
+
+(defun vector-parse (input-string)
+  (map '(vector fixnum)
+       (lambda (line)
+         (if (char= #\R (char line 0))
+             (the fixnum (parse-integer (subseq line 1)))
+             (the fixnum (- (parse-integer (subseq line 1))))))
+       (str:lines input-string)))
+
+(defun vector-map-p1 (movement-vector &aux (dial 50))
+  (declare (fixnum dial)
+           ((vector fixnum) movement-vector))
+  (count t
+         (map 'vector
+              (lambda (steps)
+                (declare (fixnum steps))
+                (zerop (setq dial (mod (+ dial steps) 100))))
+              movement-vector)))
+
+(defun series-p1 (movement-series &aux (dial 50))
+  (declare (fixnum dial)
+           ((series::series fixnum) movement-series))
+  (series:collect-length
+   (series:choose
+    (series:mapping
+     ((steps movement-series))
+     (zerop (setq dial (mod (+ dial steps) 100)))))))
+
+(defun series-p2 (movement-series &aux (dial 50))
+  (declare (fixnum dial)
+           ((series::series fixnum) movement-series))
+  (series:mapping ((raw-steps movement-series))
+                  (multiple-value-bind (times-through-100 steps)
+                      (truncate raw-steps 100)
+                    (declare (fixnum times-through-100 steps))
+                    (setf times-through-100 (abs times-through-100))
+                    (let ((new-dial (+ dial steps)))
+                      (declare (fixnum new-dial))
+                      (when (and (plusp dial)
+                                 (not (< 0 new-dial 100)))
+                        (incf times-through-100))
+                      (setf dial (mod new-dial 100))
+                      times-through-100))))
 
 (defun iter-p2 (movement-list)
   (i:iterate
