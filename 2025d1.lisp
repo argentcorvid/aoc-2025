@@ -1,8 +1,9 @@
 ;;;2025 day 1
 
 (eval-when (:compile-toplevel :load-toplevel)
-  (ql:quickload '(:alexandria :str))
-  (add-package-local-nickname 'a 'alexandria-2))
+  (ql:quickload '(:iterate :alexandria :str :series :for))
+  (add-package-local-nickname 'a 'alexandria-2)
+  (add-package-local-nickname 'i 'iterate))
 
 (defparameter *day-number* 1)
 (defparameter *input-name-template* "2025d~dinput.txt")
@@ -24,13 +25,42 @@ L82")
             (ecase (schar line 0)
               (#\L (- (parse-integer line :start 1)))
               (#\R (parse-integer line :start 1))))
-          (str:split-omit-nulls #\newline input-string)))
+          (str:lines input-string)))
 
 (defun p1 (movement-list)
   (loop with dial of-type fixnum = 50
         for steps of-type fixnum in movement-list
         do (setf dial (mod (+ dial steps) 100))
-        counting (zerop dial))) 
+        counting (zerop dial)))
+
+(defun series-parse (input)
+  (series:mapping ((line (series:scan (str:lines input))))
+                  (if (char= #\R (char line 0))
+                      (the fixnum (parse-integer (subseq line 1)))
+                      (the fixnum (- (parse-integer (subseq line 1)))))))
+
+(defun series-p1 (movement-series)
+  (let ((dial 50))
+    (declare (fixnum dial)
+             (series::basic-series movement-series))
+    (series:collect-length
+     (series:choose-if #'identity
+                       (series:mapping ((steps movement-series))
+                                       (zerop (setq dial (mod (+ dial steps) 100))))))))
+
+(defun iter-p2 (movement-list)
+  (i:iterate
+    (i:for dial initially 50 then new-dial)
+    (i:for raw-steps in movement-list)
+    (i:for (values times-through-100 steps) = (truncate raw-steps 100))
+    (i:for new-dial = (+ dial steps))
+    (declare (fixnum dial raw-steps times-through-100 steps new-dial))
+    (setf times-through-100 (abs times-through-100))
+    (when (and (plusp dial)
+               (not (< 0 new-dial 100)))
+      (incf times-through-100))
+    (setf new-dial (mod new-dial 100))
+    (i:sum times-through-100)))
 
 (defun p2 (movement-list)
   (format t "~&dial: 50,")
